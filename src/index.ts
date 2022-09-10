@@ -21,6 +21,7 @@ import { Arr, enum_from_str, enum_strings, expand_warning, registers_to_string, 
 import { Scroll_Out } from "./scroll-out/scroll-out.js";
 import { register_count } from "./emulator/instructions.js";
 import { BufferView } from "./buffer_view/buffer_view.js";
+import { Iris_Display } from "./emulator/devices/iris/iris-display.js";
 
 let animation_frame: number | undefined;
 let running = false;
@@ -211,6 +212,7 @@ const emulator = new Emulator({on_continue: frame, warn: (msg) => output_element
 emulator.add_io_device(new Sound())
 emulator.add_io_device(console_io);
 emulator.add_io_device(display);
+emulator.add_io_device(new Iris_Display(display));
 emulator.add_io_device(new Clock());
 const gamepad = new Pad();
 gamepad.add_pad(new KeyboardPad())

@@ -12,11 +12,11 @@ export class Gl_Display implements Device {
     private gl_texture: WebGLTexture;
     private uni_mode: WebGLUniformLocation;
     // private gl_program: WebGLProgram;
-    private buffer: Uint32Array;
+    public buffer: Uint32Array;
     private bytes: Uint8Array;
     private buffer_enabled: 1 | 0 = 0;
-    private x = 0;
-    private y = 0;
+    public x = 0;
+    public y = 0;
     private pref_display?: HTMLElement | null = globalThis?.document?.getElementById?.("pref-display");
     bits = 8;
 
