@@ -58,9 +58,9 @@ const JIT_box = document.getElementById("jit-box") as HTMLInputElement;
 const url = new URL(location.href, location.origin)
 const srcurl = url.searchParams.get("srcurl");
 const storage_url = url.searchParams.get("storage");
-const width = parseInt(url.searchParams.get("width") ?? "");
-const height = parseInt(url.searchParams.get("height") ?? "");
-const color = enum_from_str(Color_Mode, url.searchParams.get("color") ?? "")
+const width = parseInt(url.searchParams.get("width") ?? "") || 128;
+const height = parseInt(url.searchParams.get("height") ?? "") || 96;
+const color = enum_from_str(Color_Mode, url.searchParams.get("color") ?? "") ?? Color_Mode.Bin;
 
 memory_update_input.oninput = () => update_views();
 
