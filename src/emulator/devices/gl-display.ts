@@ -42,6 +42,11 @@ export class Gl_Display implements Device {
         this.buffer_enabled = 0;
         this.update_display();
     }
+
+    public includes(x: number, y: number): boolean {
+        return x >= 0 && x < this.width
+            && y >= 0 && y < this.height;
+    }
     
     constructor (
         gl: WebGL2RenderingContext,

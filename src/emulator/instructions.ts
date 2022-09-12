@@ -108,6 +108,7 @@ export enum IO_Port {
 
     // Iris ports
     TILE,
+    X1, Y1, X2, Y2, LINE
 }
 
 export interface Instruction_Ctx {

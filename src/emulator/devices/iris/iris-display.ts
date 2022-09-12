@@ -9,6 +9,8 @@ const tw = 4, th = 8, tile_count = 255;
 export class Iris_Display implements Device {
     colors = new Uint32Array(tw*th * tile_count);
     masks = new Uint32Array(tw*th * tile_count);
+    x1 = 0; y1 = 0;
+    x2 = 0; y2 = 0;
 
 
     constructor(private display: Gl_Display) {
@@ -80,6 +82,28 @@ export class Iris_Display implements Device {
             this.display.x += tw;
             this.display.dirty_display();
         },
+        [IO_Port.X1]: (x: number) => {this.x1 = x;},
+        [IO_Port.Y1]: (y: number) => {this.y1 = y;},
+        [IO_Port.X2]: (x: number) => {this.x2 = x;},
+        [IO_Port.Y2]: (y: number) => {this.y2 = y;},
+        [IO_Port.LINE]: (color: number) => {
+            let dx = this.x2 - this.x1;
+            let dy = this.y2 - this.y1;
+
+            const max = Math.max(Math.abs(dx), Math.abs(dy));
+            dx /= max;
+            dy /= max;
+
+            let x = this.x1 + 0.5;
+            let y = this.y1 + 0.5;
+            for (; ((0|x) != this.x2 || (0|y) != this.y2) && this.display.includes(0|x, 0|y); x += dx, y += dy) {
+                this.display.buffer[(0|x) + this.display.width*(y|0)] = color;
+            }
+            this.display.buffer[(0|x) + this.display.width*(y|0)] = color
+
+            this.display.dirty_display();
+        }
+
     };
 
     inputs = {

@@ -208,6 +208,11 @@ var IO_Port = /* @__PURE__ */ ((IO_Port2) => {
   IO_Port2[IO_Port2["MOUSE_BUTTONS"] = 73] = "MOUSE_BUTTONS";
   IO_Port2[IO_Port2["FILE"] = 74] = "FILE";
   IO_Port2[IO_Port2["TILE"] = 75] = "TILE";
+  IO_Port2[IO_Port2["X1"] = 76] = "X1";
+  IO_Port2[IO_Port2["Y1"] = 77] = "Y1";
+  IO_Port2[IO_Port2["X2"] = 78] = "X2";
+  IO_Port2[IO_Port2["Y2"] = 79] = "Y2";
+  IO_Port2[IO_Port2["LINE"] = 80] = "LINE";
   return IO_Port2;
 })(IO_Port || {});
 var { SET, GET, GET_RAM: GAM, SET_RAM: SAM, RAM_OFFSET: RAO } = Operant_Operation;
@@ -1697,6 +1702,9 @@ var Gl_Display = class {
     this.clear();
     this.buffer_enabled = 0;
     this.update_display();
+  }
+  includes(x, y) {
+    return x >= 0 && x < this.width && y >= 0 && y < this.height;
   }
   resize(width2, height2) {
     const buffer = new Uint32Array(width2 * height2);
@@ -3548,6 +3556,10 @@ var Iris_Display = class {
   }
   colors = new Uint32Array(tw * th * tile_count);
   masks = new Uint32Array(tw * th * tile_count);
+  x1 = 0;
+  y1 = 0;
+  x2 = 0;
+  y2 = 0;
   outputs = {
     [75 /* TILE */]: (index) => {
       const src_offset = index * tw * th;
@@ -3564,6 +3576,32 @@ var Iris_Display = class {
         }
       }
       this.display.x += tw;
+      this.display.dirty_display();
+    },
+    [76 /* X1 */]: (x) => {
+      this.x1 = x;
+    },
+    [77 /* Y1 */]: (y) => {
+      this.y1 = y;
+    },
+    [78 /* X2 */]: (x) => {
+      this.x2 = x;
+    },
+    [79 /* Y2 */]: (y) => {
+      this.y2 = y;
+    },
+    [80 /* LINE */]: (color2) => {
+      let dx = this.x2 - this.x1;
+      let dy = this.y2 - this.y1;
+      const max = Math.max(Math.abs(dx), Math.abs(dy));
+      dx /= max;
+      dy /= max;
+      let x = this.x1 + 0.5;
+      let y = this.y1 + 0.5;
+      for (; ((0 | x) != this.x2 || (0 | y) != this.y2) && this.display.includes(0 | x, 0 | y); x += dx, y += dy) {
+        this.display.buffer[(0 | x) + this.display.width * (y | 0)] = color2;
+      }
+      this.display.buffer[(0 | x) + this.display.width * (y | 0)] = color2;
       this.display.dirty_display();
     }
   };
