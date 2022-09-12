@@ -3599,9 +3599,9 @@ var Iris_Display = class {
       let x = this.x1 + 0.5;
       let y = this.y1 + 0.5;
       for (; ((0 | x) != this.x2 || (0 | y) != this.y2) && this.display.includes(0 | x, 0 | y); x += dx, y += dy) {
-        this.display.buffer[(0 | x) + this.display.width * (y | 0)] = color2;
+        this.display.buffer[(0 | x) + this.display.width * (0 | y)] = color2;
       }
-      this.display.buffer[(0 | x) + this.display.width * (y | 0)] = color2;
+      this.display.buffer[(0 | x) + this.display.width * (0 | y)] = color2;
       this.display.dirty_display();
     }
   };
