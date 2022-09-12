@@ -1045,6 +1045,9 @@ var Scroll_Out = class extends HTMLElement {
     this.char.style.visibility = "hidden";
     this.appendChild(this.char);
   }
+  get_text() {
+    return this.lines.join("\n");
+  }
   update() {
     const { ceil: c, floor: f } = Math;
     const { clientWidth: cw, clientHeight: ch } = this.char;
@@ -3583,6 +3586,7 @@ var register_view = document.getElementById("register-view");
 var console_input = document.getElementById("stdin");
 var console_output = document.getElementById("stdout");
 var null_terminate_input = document.getElementById("null-terminate");
+var console_copy = document.getElementById("copy-console");
 var share_button = document.getElementById("share-button");
 var auto_run_input = document.getElementById("auto-run-input");
 var storage_input = document.getElementById("storage-input");
@@ -3680,6 +3684,9 @@ console_input.addEventListener("keydown", (e) => {
     }
     input_callback();
   }
+});
+console_copy.addEventListener("click", (e) => {
+  navigator.clipboard.writeText(console_output.get_text());
 });
 var console_io = new Console_IO(
   {
