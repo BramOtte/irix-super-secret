@@ -155,9 +155,7 @@ export class Gl_Display implements Device {
             return;
         }
         this.buffer[this.x + this.y * this.width] = color;
-        if (!this.buffer_enabled){
-            this.dirty_display();
-        }
+        this.dirty_display();
     }
     buffer_in(): number {
         return this.buffer_enabled;
@@ -197,11 +195,13 @@ export class Gl_Display implements Device {
         gl.viewport(0, 0, width, height);
     }
 
-    private dirty_display(){
-        this.update_display();
+    dirty_display(){
+        if (!this.buffer_enabled){
+            this.update_display();
+        }
     }
 
-    update_display(){
+    private update_display(){
         let {gl, width, height, bytes, uni_mode, color_mode, bits} = this;
         if (color_mode === Color_Mode.RGB){
             if (this.bits >= 24){

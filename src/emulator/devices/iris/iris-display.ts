@@ -78,7 +78,7 @@ export class Iris_Display implements Device {
                 }
             }
             this.display.x += tw;
-            this.display.update_display();
+            this.display.dirty_display();
         },
     };
 
