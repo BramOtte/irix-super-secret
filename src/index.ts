@@ -55,6 +55,16 @@ const memory_update_input = document.getElementById("update-mem-input") as HTMLI
 
 const JIT_box = document.getElementById("jit-box") as HTMLInputElement;
 
+const font_file = document.getElementById("font-file") as HTMLInputElement;
+
+font_file.oninput = e => {
+    const font = font_file.files?.[0];
+    if (font === undefined) {
+        return;
+    }
+    iris_display.load_font(font);
+}
+
 const url = new URL(location.href, location.origin)
 const srcurl = url.searchParams.get("srcurl");
 const storage_url = url.searchParams.get("storage");
@@ -217,7 +227,8 @@ const emulator = new Emulator({on_continue: frame, warn: (msg) => output_element
 emulator.add_io_device(new Sound())
 emulator.add_io_device(console_io);
 emulator.add_io_device(display);
-emulator.add_io_device(new Iris_Display(display));
+const iris_display = new Iris_Display(display);
+emulator.add_io_device(iris_display);
 emulator.add_io_device(new Clock());
 const gamepad = new Pad();
 gamepad.add_pad(new KeyboardPad())

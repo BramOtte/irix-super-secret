@@ -206,7 +206,7 @@ export class Gl_Display implements Device {
         }
     }
 
-    private update_display(){
+    public update_display(){
         let {gl, width, height, bytes, uni_mode, color_mode, bits} = this;
         if (color_mode === Color_Mode.RGB){
             if (this.bits >= 24){

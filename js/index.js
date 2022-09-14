@@ -466,9 +466,9 @@ var Opcodes_operant_lengths = object_map(Opcodes_operants, (key, value) => {
   }
   return [key, value[0].length];
 }, []);
-function fail_assert(ctx, msg) {
+function fail_assert(ctx2, msg) {
   const message = `Assertion failed: ${msg}`;
-  ctx.warn(message);
+  ctx2.warn(message);
 }
 
 // src/emulator/util.ts
@@ -785,17 +785,7 @@ var Editor_Window = class extends HTMLElement {
   tab_width = 4;
   constructor() {
     super();
-    l(
-      this,
-      {},
-      this.line_nrs = l("div", { className: "line-nrs" }),
-      this.code = l(
-        "div",
-        { className: "code" },
-        this.input = l("textarea", { spellcheck: false }),
-        this.colors = l("code", { className: "colors" })
-      )
-    );
+    l(this, {}, this.line_nrs = l("div", { className: "line-nrs" }), this.code = l("div", { className: "code" }, this.input = l("textarea", { spellcheck: false }), this.colors = l("code", { className: "colors" })));
     this.input.addEventListener("input", this.input_cb.bind(this));
     this.input.addEventListener("keydown", this.keydown_cb.bind(this));
     this.profile_check.type = "checkbox";
@@ -1154,15 +1144,9 @@ var BufferView = class extends HTMLElement {
   width = 16;
   constructor() {
     super();
-    l(
-      this,
-      {
-        style: { whiteSpace: "pre", fontFamily: "monospace", position: "relative", overflow: "auto", display: "block" }
-      },
-      this.content = l("div", { style: { position: "absolute" } }),
-      this.scroll_div = l("div"),
-      this.char = l("div", { style: { position: "absolute", visibility: "hidden" } }, "a")
-    );
+    l(this, {
+      style: { whiteSpace: "pre", fontFamily: "monospace", position: "relative", overflow: "auto", display: "block" }
+    }, this.content = l("div", { style: { position: "absolute" } }), this.scroll_div = l("div"), this.char = l("div", { style: { position: "absolute", visibility: "hidden" } }, "a"));
     this.onscroll = this.update;
     const observer = new ResizeObserver(() => this.update());
     observer.observe(this);
@@ -2077,8 +2061,8 @@ var KeyboardPad = class {
 
 // src/emulator/devices/mouse.ts
 var Mouse = class {
-  constructor(canvas2) {
-    this.canvas = canvas2;
+  constructor(canvas3) {
+    this.canvas = canvas3;
     addEventListener("mousemove", this.onmove);
     addEventListener("mousedown", this.ondown);
     addEventListener("mouseup", this.onup);
@@ -2156,8 +2140,8 @@ var base_frequency = 92.499;
 var ramp_up = 5e-3;
 var ramp_down = 0.01;
 var NoteBlock = class {
-  constructor(ctx) {
-    this.ctx = ctx;
+  constructor(ctx2) {
+    this.ctx = ctx2;
     this.oscillator = this.ctx.createOscillator();
     this.gain = this.ctx.createGain();
     this.gain.gain.value = 0;
@@ -2925,9 +2909,7 @@ var Parser_output = class {
 function parse(source, options = {}) {
   const out = new Parser_output();
   Object.assign(out.constants, options.constants ?? {});
-  out.lines = source.split("\n").map(
-    (line) => line.replace(/,/g, "").replace(/\s+/g, " ").replace(/\/\/.*/g, "").trim()
-  );
+  out.lines = source.split("\n").map((line) => line.replace(/,/g, "").replace(/\s+/g, " ").replace(/\/\/.*/g, "").trim());
   for (let i = 0; i < enum_count(URCL_Header); i++) {
     out.headers[i] = { value: urcl_headers[i].def };
     out.headers[i].operant = urcl_headers[i].def_operant;
@@ -3160,17 +3142,11 @@ function parse_header(line, line_nr, headers, errors) {
   const header_def = urcl_headers[header];
   if (header_def.def_operant !== void 0 && val_str) {
     if (opOrVal_str === void 0) {
-      errors.push(warn(
-        line_nr,
-        `Missing operant for header ${header_str}, must be ${enum_strings(Header_Operant)}`
-      ));
+      errors.push(warn(line_nr, `Missing operant for header ${header_str}, must be ${enum_strings(Header_Operant)}`));
     }
     const operant = enum_from_str(Header_Operant, opOrVal_str || "");
     if (operant === void 0 && opOrVal_str !== void 0) {
-      errors.push(warn(
-        line_nr,
-        `Unknown operant ${opOrVal_str} for header ${header_str}, must be ${enum_strings(Header_Operant)}`
-      ));
+      errors.push(warn(line_nr, `Unknown operant ${opOrVal_str} for header ${header_str}, must be ${enum_strings(Header_Operant)}`));
     }
     const value = check_value(val_str);
     if (operant !== void 0 && value !== void 0) {
@@ -3191,20 +3167,14 @@ function parse_header(line, line_nr, headers, errors) {
     if (header_def.in) {
       const num = enum_from_str(header_def.in, value.toUpperCase());
       if (num === void 0) {
-        errors.push(warn(
-          line_nr,
-          `Value ${value} for header ${header_str} most be one of: ${enum_strings(header_def.in)}`
-        ));
+        errors.push(warn(line_nr, `Value ${value} for header ${header_str} most be one of: ${enum_strings(header_def.in)}`));
         return void 0;
       }
       return num;
     } else {
       const num = my_parse_int(value);
       if (!Number.isInteger(num)) {
-        errors.push(warn(
-          line_nr,
-          `Value ${value} for header ${header_str} must be an integer`
-        ));
+        errors.push(warn(line_nr, `Value ${value} for header ${header_str} must be an integer`));
         return void 0;
       }
       return num;
@@ -3235,10 +3205,7 @@ function split_instruction(line, line_nr, inst_i, out, errors) {
   }
   const operant_count = Opcodes_operant_lengths[opcode];
   if (ops.length != operant_count) {
-    errors.push(warn(
-      line_nr,
-      `Expected ${operant_count} operants but got [${ops}] for opcode ${opcode_str}`
-    ));
+    errors.push(warn(line_nr, `Expected ${operant_count} operants but got [${ops}] for opcode ${opcode_str}`));
   }
   out.opcodes[inst_i] = opcode;
   out.operant_strings[inst_i] = ops;
@@ -3455,6 +3422,9 @@ function str_until(string, sub_string) {
 var tw = 4;
 var th = 8;
 var tile_count = 255;
+var canvas = document.getElementById("font-canvas") ?? document.createElement("canvas");
+var ctx = canvas.getContext("2d");
+var font_msg = document.getElementById("font-msg") ?? document.createElement("font");
 var Iris_Display = class {
   constructor(display2) {
     this.display = display2;
@@ -3526,33 +3496,9 @@ var Iris_Display = class {
       1,
       1
     ]);
-    const font = new Image();
-    font.src = "src/emulator/devices/iris/iris-font.png";
-    font.onload = (e) => {
-      const canvas2 = document.createElement("canvas");
-      canvas2.width = font.width;
-      canvas2.height = font.height;
-      document.body.appendChild(font);
-      const ctx = canvas2.getContext("2d");
-      if (!ctx) {
-        throw new Error("");
-      }
-      ctx.drawImage(font, 0, 0);
-      const img = ctx.getImageData(0, 0, font.width, font.height);
-      for (let y = 0, dest_i = 0; y < img.height; y += th) {
-        for (let x = 0; x < img.width; x += tw) {
-          for (let ty = 0; ty < th; ty += 1) {
-            for (let tx = 0; tx < tw; tx += 1, dest_i += 1) {
-              const src_i = 4 * (x + tx + (y + ty) * img.width);
-              this.colors[dest_i] = img.data[src_i] + img.data[src_i + 1] + img.data[src_i + 2] < 128 * 3 ? 16777215 : 0;
-              this.masks[dest_i] = img.data[src_i + 3] >= 128 ? 16777215 : 0;
-            }
-          }
-        }
-      }
-      console.log(this.colors.map((v) => v > 0 ? 1 : 0).join(""));
-      console.log(this.masks.map((v) => v > 0 ? 1 : 0).join(""));
-    };
+    fetch("src/emulator/devices/iris/iris-font.png").then((res) => res.blob()).then((blob) => {
+      this.load_font(blob);
+    });
   }
   colors = new Uint32Array(tw * th * tile_count);
   masks = new Uint32Array(tw * th * tile_count);
@@ -3560,6 +3506,27 @@ var Iris_Display = class {
   y1 = 0;
   x2 = 0;
   y2 = 0;
+  async load_font(font_img) {
+    let font = await createImageBitmap(font_img);
+    canvas.width = font.width;
+    canvas.height = font.height;
+    ctx.drawImage(font, 0, 0);
+    const img = ctx.getImageData(0, 0, font.width, font.height);
+    for (let y = 0, dest_i = 0; y < img.height; y += th) {
+      for (let x = 0; x < img.width; x += tw) {
+        for (let ty = 0; ty < th; ty += 1) {
+          for (let tx = 0; tx < tw; tx += 1, dest_i += 1) {
+            const src_i = 4 * (x + tx + (y + ty) * img.width);
+            this.colors[dest_i] = img.data[src_i] + img.data[src_i + 1] + img.data[src_i + 2] < 128 * 3 ? 16777215 : 0;
+            this.masks[dest_i] = img.data[src_i + 3] >= 128 ? 16777215 : 0;
+          }
+        }
+        ctx.fillStyle = x / 4 + y / 8 & 1 ? "wheat" : "BurlyWood";
+        ctx.fillRect(x, y, tw, th);
+      }
+    }
+    ctx.drawImage(font, 0, 0);
+  }
   outputs = {
     [75 /* TILE */]: (index) => {
       const src_offset = index * tw * th;
@@ -3636,6 +3603,14 @@ var clock_speed_input = document.getElementById("clock-speed-input");
 var clock_speed_output = document.getElementById("clock-speed-output");
 var memory_update_input = document.getElementById("update-mem-input");
 var JIT_box = document.getElementById("jit-box");
+var font_file = document.getElementById("font-file");
+font_file.oninput = (e) => {
+  const font = font_file.files?.[0];
+  if (font === void 0) {
+    return;
+  }
+  iris_display.load_font(font);
+};
 var url = new URL(location.href, location.origin);
 var srcurl = url.searchParams.get("srcurl");
 var storage_url = url.searchParams.get("storage");
@@ -3656,8 +3631,8 @@ share_button.onclick = (e) => {
   const srcurl2 = `data:text/plain;base64,${btoa(source_input.value)}`;
   const share = new URL(location.href);
   share.searchParams.set("srcurl", srcurl2);
-  share.searchParams.set("width", "" + canvas.width);
-  share.searchParams.set("height", "" + canvas.height);
+  share.searchParams.set("width", "" + canvas2.width);
+  share.searchParams.set("height", "" + canvas2.height);
   share.searchParams.set("color", Color_Mode[display.color_mode]);
   navigator.clipboard.writeText(share.href);
 };
@@ -3726,33 +3701,29 @@ console_input.addEventListener("keydown", (e) => {
 console_copy.addEventListener("click", (e) => {
   navigator.clipboard.writeText(console_output.get_text());
 });
-var console_io = new Console_IO(
-  {
-    read(callback) {
-      input_callback = callback;
-    },
-    get text() {
-      return console_input.value;
-    },
-    set text(value) {
-      console_input.value = value;
-    }
+var console_io = new Console_IO({
+  read(callback) {
+    input_callback = callback;
   },
-  (text) => {
-    console_output.write(text);
+  get text() {
+    return console_input.value;
   },
-  () => {
-    console_output.clear();
-    input_callback = void 0;
+  set text(value) {
+    console_input.value = value;
   }
-);
-var canvas = document.getElementsByTagName("canvas")[0];
-var gl = canvas.getContext("webgl2");
+}, (text) => {
+  console_output.write(text);
+}, () => {
+  console_output.clear();
+  input_callback = void 0;
+});
+var canvas2 = document.getElementsByTagName("canvas")[0];
+var gl = canvas2.getContext("webgl2");
 if (!gl) {
   throw new Error("Unable to get webgl rendering context");
 }
-canvas.width = width || 32;
-canvas.height = height || 32;
+canvas2.width = width || 32;
+canvas2.height = height || 32;
 var display = new Gl_Display(gl, color);
 var color_mode_input = document.getElementById("color-mode");
 if (color !== void 0)
@@ -3767,11 +3738,11 @@ var width_input = document.getElementById("display-width");
 var height_input = document.getElementById("display-height");
 var fullscreen_button = document.getElementById("display-fullscreen");
 fullscreen_button.onclick = () => {
-  canvas.requestPointerLock();
-  canvas.requestFullscreen();
+  canvas2.requestPointerLock();
+  canvas2.requestFullscreen();
 };
-width_input.value = "" + canvas.width;
-height_input.value = "" + canvas.height;
+width_input.value = "" + canvas2.width;
+height_input.value = "" + canvas2.height;
 width_input.addEventListener("input", resize_display);
 height_input.addEventListener("input", resize_display);
 resize_display();
@@ -3785,14 +3756,15 @@ var emulator = new Emulator({ on_continue: frame, warn: (msg) => output_element.
 emulator.add_io_device(new Sound());
 emulator.add_io_device(console_io);
 emulator.add_io_device(display);
-emulator.add_io_device(new Iris_Display(display));
+var iris_display = new Iris_Display(display);
+emulator.add_io_device(iris_display);
 emulator.add_io_device(new Clock());
 var gamepad = new Pad();
 gamepad.add_pad(new KeyboardPad());
 emulator.add_io_device(gamepad);
 emulator.add_io_device(new RNG());
 emulator.add_io_device(new Keyboard());
-emulator.add_io_device(new Mouse(canvas));
+emulator.add_io_device(new Mouse(canvas2));
 source_input.oninput = oninput;
 auto_run_input.onchange = oninput;
 function oninput() {

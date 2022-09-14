@@ -6,6 +6,11 @@ import { Gl_Display } from "../gl-display";
 
 const tw = 4, th = 8, tile_count = 255;
 
+const canvas = (document.getElementById("font-canvas") ?? document.createElement("canvas")) as HTMLCanvasElement;
+const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+
+const font_msg = (document.getElementById("font-msg") ?? document.createElement("font")) as HTMLOutputElement;
+
 export class Iris_Display implements Device {
     colors = new Uint32Array(tw*th * tile_count);
     masks = new Uint32Array(tw*th * tile_count);
@@ -35,33 +40,33 @@ export class Iris_Display implements Device {
             1, 1, 1, 1,
         ])
 
-        const font = new Image();
-        font.src = "src/emulator/devices/iris/iris-font.png";
-        font.onload = e => {
-            const canvas = document.createElement("canvas");
-            canvas.width = font.width;
-            canvas.height = font.height;
-            document.body.appendChild(font);
-            const ctx = canvas.getContext("2d");
-            if (!ctx) {
-                throw new Error("");
-            }
-            ctx.drawImage(font, 0, 0);
-            const img = ctx.getImageData(0, 0, font.width, font.height);
-            for (let y = 0, dest_i = 0; y < img.height; y += th) {
-                for (let x = 0; x < img.width; x += tw) {
-                    for (let ty = 0; ty < th; ty += 1) {
-                        for (let tx = 0; tx < tw; tx += 1, dest_i += 1) {
-                            const src_i = 4 * ((x + tx) + (y + ty) * img.width);
-                            this.colors[dest_i] = img.data[src_i] + img.data[src_i + 1] + img.data[src_i + 2] < 128*3 ? 0xffffff : 0;
-                            this.masks[dest_i] = img.data[src_i + 3] >= 128 ? 0xffffff : 0;
-                        }
+        fetch("src/emulator/devices/iris/iris-font.png").then(res => res.blob()).then(blob => {
+            this.load_font(blob);
+        })
+    }
+    async load_font(font_img: ImageBitmapSource) {
+        let font = await createImageBitmap(font_img);
+
+        canvas.width = font.width;
+        canvas.height = font.height;
+        
+        ctx.drawImage(font, 0, 0);
+        const img = ctx.getImageData(0, 0, font.width, font.height);
+        for (let y = 0, dest_i = 0; y < img.height; y += th) {
+            for (let x = 0; x < img.width; x += tw) {
+                for (let ty = 0; ty < th; ty += 1) {
+                    for (let tx = 0; tx < tw; tx += 1, dest_i += 1) {
+                        const src_i = 4 * ((x + tx) + (y + ty) * img.width);
+                        this.colors[dest_i] = img.data[src_i] + img.data[src_i + 1] + img.data[src_i + 2] < 128*3 ? 0xffffff : 0;
+                        this.masks[dest_i] = img.data[src_i + 3] >= 128 ? 0xffffff : 0;
                     }
                 }
+
+                ctx.fillStyle = ((x / 4) + (y / 8) & 1) ? "wheat" : "BurlyWood";
+                ctx.fillRect(x, y, tw, th);
             }
-            console.log(this.colors.map(v => v > 0 ? 1 : 0).join(""));
-            console.log(this.masks.map(v => v > 0 ? 1 : 0).join(""));
         }
+        ctx.drawImage(font, 0, 0);
     }
 
     outputs = {
