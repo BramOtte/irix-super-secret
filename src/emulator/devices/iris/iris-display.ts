@@ -18,7 +18,7 @@ export class Iris_Display implements Device {
     x2 = 0; y2 = 0;
 
 
-    constructor(private display: Gl_Display) {
+    constructor(public display: Gl_Display) {
         this.colors.set([
             1, 1, 1, 1,
             1, 0 ,0, 1,
@@ -68,10 +68,8 @@ export class Iris_Display implements Device {
         }
         ctx.drawImage(font, 0, 0);
     }
-
-    outputs = {
-        [IO_Port.TILE]: (index: number) => {
-            const src_offset = index * tw * th;
+    tile_out(index: number) {
+        const src_offset = index * tw * th;
             const dest_offset = this.display.x + this.display.y * this.display.width;
             const sx = this.display.x, ex = Math.min(sx + tw, this.display.width ), dx = ex - sx;
             const sy = this.display.y, ey = Math.min(sy + th, this.display.height), dy = ey - sy;
@@ -86,13 +84,9 @@ export class Iris_Display implements Device {
             }
             this.display.x += tw;
             this.display.dirty_display();
-        },
-        [IO_Port.X1]: (x: number) => {this.x1 = x;},
-        [IO_Port.Y1]: (y: number) => {this.y1 = y;},
-        [IO_Port.X2]: (x: number) => {this.x2 = x;},
-        [IO_Port.Y2]: (y: number) => {this.y2 = y;},
-        [IO_Port.LINE]: (color: number) => {
-            let dx = this.x2 - this.x1;
+    }
+    line_out(color: number) {
+        let dx = this.x2 - this.x1;
             let dy = this.y2 - this.y1;
 
             const max = Math.max(Math.abs(dx), Math.abs(dy));
@@ -107,8 +101,20 @@ export class Iris_Display implements Device {
             this.display.buffer[(0|x) + this.display.width*(0|y)] = color;
 
             this.display.dirty_display();
-        }
+    }
 
+    outputs = {
+        [IO_Port.TILE]: this.tile_out,
+        [IO_Port.X1]: (x: number) => {this.x1 = x;},
+        [IO_Port.Y1]: (y: number) => {this.y1 = y;},
+        [IO_Port.X2]: (x: number) => {this.x2 = x;},
+        [IO_Port.Y2]: (y: number) => {this.y2 = y;},
+        [IO_Port.LINE]: this.line_out,
+        [IO_Port.NUMB]: (x: number) => {
+            for (const char of ""+x) {
+                this.tile_out(char.charCodeAt(0) - '0'.charCodeAt(0));
+            }
+        }
     };
 
     inputs = {
