@@ -3512,6 +3512,7 @@ var Iris_Display = class {
       this.load_font(blob);
     });
   }
+  bits = 16;
   colors = new Uint32Array(tw * th * tile_count);
   masks = new Uint32Array(tw * th * tile_count);
   x1 = 0;
@@ -3539,13 +3540,22 @@ var Iris_Display = class {
     }
     ctx.drawImage(font, 0, 0);
   }
+  sign_extend(x) {
+    if (this.bits == 32) {
+      return 0 | x;
+    } else {
+      return x << this.bits >> this.bits;
+    }
+  }
   tile_out(index) {
     const src_offset = index * tw * th;
-    const dest_offset = this.display.x + this.display.y * this.display.width;
-    const sx = this.display.x, ex = Math.min(sx + tw, this.display.width), dx = ex - sx;
-    const sy = this.display.y, ey = Math.min(sy + th, this.display.height), dy = ey - sy;
-    for (let y = 0; y < dy; ++y) {
-      for (let x = 0; x < dx; ++x) {
+    const rx = this.sign_extend(this.display.x);
+    const ry = this.sign_extend(this.display.y);
+    const dest_offset = rx + ry * this.display.width;
+    const sx = Math.max(0, rx), ex = Math.min(rx + tw, this.display.width), dx = ex - rx;
+    const sy = Math.max(0, ry), ey = Math.min(ry + th, this.display.height), dy = ey - ry;
+    for (let y = sy - ry; y < dy; ++y) {
+      for (let x = sx - rx; x < dx; ++x) {
         const src_i = src_offset + x + y * tw;
         const dest_i = dest_offset + x + y * this.display.width;
         if (this.masks[src_i]) {
