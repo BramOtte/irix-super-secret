@@ -85,22 +85,27 @@ export class Iris_Display implements Device {
             this.display.x += tw;
             this.display.dirty_display();
     }
+    // TODO: make this hardware accurate
     line_out(color: number) {
         let dx = this.x2 - this.x1;
-            let dy = this.y2 - this.y1;
+        let dy = this.y2 - this.y1;
 
-            const max = Math.max(Math.abs(dx), Math.abs(dy));
-            dx /= max;
-            dy /= max;
+        const max = Math.max(Math.abs(dx), Math.abs(dy));
+        dx /= max;
+        dy /= max;
 
-            let x = this.x1 + 0.5;
-            let y = this.y1 + 0.5;
-            for (; ((0|x) != this.x2 || (0|y) != this.y2) && this.display.includes(0|x, 0|y); x += dx, y += dy) {
+        let x = this.x1 + 0.5;
+        let y = this.y1 + 0.5;
+        for (let i = 0; i < max; i++) {
+            if (this.display.includes(0|x, 0|y)) {
                 this.display.buffer[(0|x) + this.display.width*(0|y)] = color;
             }
+            x += dx, y += dy
+        }
+        if (this.display.includes(0|x, 0|y)) {
             this.display.buffer[(0|x) + this.display.width*(0|y)] = color;
-
-            this.display.dirty_display();
+        }
+        this.display.dirty_display();
     }
 
     outputs = {

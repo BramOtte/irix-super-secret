@@ -785,17 +785,7 @@ var Editor_Window = class extends HTMLElement {
   tab_width = 4;
   constructor() {
     super();
-    l(
-      this,
-      {},
-      this.line_nrs = l("div", { className: "line-nrs" }),
-      this.code = l(
-        "div",
-        { className: "code" },
-        this.input = l("textarea", { spellcheck: false }),
-        this.colors = l("code", { className: "colors" })
-      )
-    );
+    l(this, {}, this.line_nrs = l("div", { className: "line-nrs" }), this.code = l("div", { className: "code" }, this.input = l("textarea", { spellcheck: false }), this.colors = l("code", { className: "colors" })));
     this.input.addEventListener("input", this.input_cb.bind(this));
     this.input.addEventListener("keydown", this.keydown_cb.bind(this));
     this.profile_check.type = "checkbox";
@@ -1154,15 +1144,9 @@ var BufferView = class extends HTMLElement {
   width = 16;
   constructor() {
     super();
-    l(
-      this,
-      {
-        style: { whiteSpace: "pre", fontFamily: "monospace", position: "relative", overflow: "auto", display: "block" }
-      },
-      this.content = l("div", { style: { position: "absolute" } }),
-      this.scroll_div = l("div"),
-      this.char = l("div", { style: { position: "absolute", visibility: "hidden" } }, "a")
-    );
+    l(this, {
+      style: { whiteSpace: "pre", fontFamily: "monospace", position: "relative", overflow: "auto", display: "block" }
+    }, this.content = l("div", { style: { position: "absolute" } }), this.scroll_div = l("div"), this.char = l("div", { style: { position: "absolute", visibility: "hidden" } }, "a"));
     this.onscroll = this.update;
     const observer = new ResizeObserver(() => this.update());
     observer.observe(this);
@@ -2937,9 +2921,7 @@ var Parser_output = class {
 function parse(source, options = {}) {
   const out = new Parser_output();
   Object.assign(out.constants, options.constants ?? {});
-  out.lines = source.split("\n").map(
-    (line) => line.replace(/,/g, "").replace(/\s+/g, " ").replace(/\/\/.*/g, "").trim()
-  );
+  out.lines = source.split("\n").map((line) => line.replace(/,/g, "").replace(/\s+/g, " ").replace(/\/\/.*/g, "").trim());
   for (let i = 0; i < enum_count(URCL_Header); i++) {
     out.headers[i] = { value: urcl_headers[i].def };
     out.headers[i].operant = urcl_headers[i].def_operant;
@@ -3172,17 +3154,11 @@ function parse_header(line, line_nr, headers, errors) {
   const header_def = urcl_headers[header];
   if (header_def.def_operant !== void 0 && val_str) {
     if (opOrVal_str === void 0) {
-      errors.push(warn(
-        line_nr,
-        `Missing operant for header ${header_str}, must be ${enum_strings(Header_Operant)}`
-      ));
+      errors.push(warn(line_nr, `Missing operant for header ${header_str}, must be ${enum_strings(Header_Operant)}`));
     }
     const operant = enum_from_str(Header_Operant, opOrVal_str || "");
     if (operant === void 0 && opOrVal_str !== void 0) {
-      errors.push(warn(
-        line_nr,
-        `Unknown operant ${opOrVal_str} for header ${header_str}, must be ${enum_strings(Header_Operant)}`
-      ));
+      errors.push(warn(line_nr, `Unknown operant ${opOrVal_str} for header ${header_str}, must be ${enum_strings(Header_Operant)}`));
     }
     const value = check_value(val_str);
     if (operant !== void 0 && value !== void 0) {
@@ -3203,20 +3179,14 @@ function parse_header(line, line_nr, headers, errors) {
     if (header_def.in) {
       const num = enum_from_str(header_def.in, value.toUpperCase());
       if (num === void 0) {
-        errors.push(warn(
-          line_nr,
-          `Value ${value} for header ${header_str} most be one of: ${enum_strings(header_def.in)}`
-        ));
+        errors.push(warn(line_nr, `Value ${value} for header ${header_str} most be one of: ${enum_strings(header_def.in)}`));
         return void 0;
       }
       return num;
     } else {
       const num = my_parse_int(value);
       if (!Number.isInteger(num)) {
-        errors.push(warn(
-          line_nr,
-          `Value ${value} for header ${header_str} must be an integer`
-        ));
+        errors.push(warn(line_nr, `Value ${value} for header ${header_str} must be an integer`));
         return void 0;
       }
       return num;
@@ -3247,10 +3217,7 @@ function split_instruction(line, line_nr, inst_i, out, errors) {
   }
   const operant_count = Opcodes_operant_lengths[opcode];
   if (ops.length != operant_count) {
-    errors.push(warn(
-      line_nr,
-      `Expected ${operant_count} operants but got [${ops}] for opcode ${opcode_str}`
-    ));
+    errors.push(warn(line_nr, `Expected ${operant_count} operants but got [${ops}] for opcode ${opcode_str}`));
   }
   out.opcodes[inst_i] = opcode;
   out.operant_strings[inst_i] = ops;
@@ -3597,10 +3564,15 @@ var Iris_Display = class {
     dy /= max;
     let x = this.x1 + 0.5;
     let y = this.y1 + 0.5;
-    for (; ((0 | x) != this.x2 || (0 | y) != this.y2) && this.display.includes(0 | x, 0 | y); x += dx, y += dy) {
+    for (let i = 0; i < max; i++) {
+      if (this.display.includes(0 | x, 0 | y)) {
+        this.display.buffer[(0 | x) + this.display.width * (0 | y)] = color2;
+      }
+      x += dx, y += dy;
+    }
+    if (this.display.includes(0 | x, 0 | y)) {
       this.display.buffer[(0 | x) + this.display.width * (0 | y)] = color2;
     }
-    this.display.buffer[(0 | x) + this.display.width * (0 | y)] = color2;
     this.display.dirty_display();
   }
   outputs = {
@@ -3899,26 +3871,22 @@ console_input.addEventListener("keydown", (e) => {
 console_copy.addEventListener("click", (e) => {
   navigator.clipboard.writeText(console_output.get_text());
 });
-var console_io = new Console_IO(
-  {
-    read(callback) {
-      input_callback = callback;
-    },
-    get text() {
-      return console_input.value;
-    },
-    set text(value) {
-      console_input.value = value;
-    }
+var console_io = new Console_IO({
+  read(callback) {
+    input_callback = callback;
   },
-  (text) => {
-    console_output.write(text);
+  get text() {
+    return console_input.value;
   },
-  () => {
-    console_output.clear();
-    input_callback = void 0;
+  set text(value) {
+    console_input.value = value;
   }
-);
+}, (text) => {
+  console_output.write(text);
+}, () => {
+  console_output.clear();
+  input_callback = void 0;
+});
 var canvas2 = document.getElementsByTagName("canvas")[0];
 var gl = canvas2.getContext("webgl2");
 if (!gl) {
