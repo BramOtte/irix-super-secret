@@ -74,10 +74,11 @@ interface URCL_Header_Def {
     in?: Record<string, unknown>
 }
 
+// TODO: changed for iris
 export const urcl_headers: Record<URCL_Header, URCL_Header_Def> = {
-    [URCL_Header.BITS]: {def: 8, def_operant: Header_Operant["=="]},
-    [URCL_Header.MINREG]: {def: 8},
-    [URCL_Header.MINHEAP]: {def: 16},
+    [URCL_Header.BITS]: {def: 16, def_operant: Header_Operant["=="]},
+    [URCL_Header.MINREG]: {def: 25},
+    [URCL_Header.MINHEAP]: {def: 1024 * 4},
     [URCL_Header.RUN]: {def: Header_Run.ROM, in: Header_Run},
     [URCL_Header.MINSTACK]: {def: 8},
 }

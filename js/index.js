@@ -135,9 +135,9 @@ var Header_Run = /* @__PURE__ */ ((Header_Run2) => {
   return Header_Run2;
 })(Header_Run || {});
 var urcl_headers = {
-  [0 /* BITS */]: { def: 8, def_operant: 0 /* == */ },
-  [1 /* MINREG */]: { def: 8 },
-  [2 /* MINHEAP */]: { def: 16 },
+  [0 /* BITS */]: { def: 16, def_operant: 0 /* == */ },
+  [1 /* MINREG */]: { def: 25 },
+  [2 /* MINHEAP */]: { def: 1024 * 4 },
   [3 /* RUN */]: { def: 0 /* ROM */, in: Header_Run },
   [4 /* MINSTACK */]: { def: 8 }
 };
