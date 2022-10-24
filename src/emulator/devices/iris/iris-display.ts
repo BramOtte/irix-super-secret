@@ -78,22 +78,32 @@ export class Iris_Display implements Device {
     }
     tile_out(index: number) {
         const src_offset = index * tw * th;
-            const rx = this.sign_extend(this.display.x);
-            const ry = this.sign_extend(this.display.y);
-            const dest_offset = rx + ry * this.display.width;
-            const sx = Math.max(0, rx), ex = Math.min(rx + tw, this.display.width), dx = ex - rx;
-            const sy = Math.max(0, ry), ey = Math.min(ry + th, this.display.height), dy = ey - ry;
-            for (let y = sy - ry; y < dy; ++y) {
-                for (let x = sx - rx; x < dx; ++x) {
-                    const src_i = src_offset + x + y*tw;
-                    const dest_i = dest_offset + x + y * this.display.width;
-                    if (this.masks[src_i]) {
-                        this.display.buffer[dest_i] = this.colors[src_i];
-                    }
+        const sx = this.sign_extend(this.display.x);
+        const sy = this.sign_extend(this.display.y);
+
+        for (let y = 0 ; y < th; y++) {
+            const yy = sy + y;
+            for (let x = 0; x < tw; x++) {
+                const xx = sx + x;
+                if (this.display.includes(xx, yy) && this.masks[src_offset + x + y*tw]) {
+                    this.display.buffer[xx + yy * this.display.width] = this.colors[src_offset + x + y*tw];
                 }
             }
-            this.display.x += tw;
-            this.display.dirty_display();
+        }
+            // 
+            // const sx = Math.max(0, rx), ex = Math.min(rx + tw, this.display.width), dx = ex - rx;
+            // const sy = Math.max(0, ry), ey = Math.min(ry + th, this.display.height), dy = ey - ry;
+            // for (let y = sy - ry; y < dy; ++y) {
+            //     for (let x = sx - rx; x < dx; ++x) {
+            //         const src_i = src_offset + x + y*tw;
+            //         const dest_i = dest_offset + x + y * this.display.width;
+            //         if (this.masks[src_i]) {
+            //             this.display.buffer[dest_i] = this.colors[src_i];
+            //         }
+            //     }
+            // }
+        this.display.x += tw;
+        this.display.dirty_display();
     }
     // TODO: make this hardware accurate
     line_out(color: number) {
