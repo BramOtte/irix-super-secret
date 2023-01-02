@@ -596,7 +596,7 @@ step(): Step_Result {
         if (this.reg_save_stack.length > max_save) {
             throw new Error("register save stack overflow");
         }
-        this.reg_save_stack.push(this.registers.slice());
+        this.reg_save_stack.push(this.registers.map(v=>v));
     }
     restore_reg(): void {
         const registers = this.reg_save_stack.pop();
