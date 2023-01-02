@@ -254,6 +254,29 @@
                 <h3>Memory</h3>
                 <span style="padding-right: 0.5em;">Auto Update</span><input type="checkbox" id="update-mem-input"> <br>
                 <buffer-view id="memory-view" style="width: 100%; height: 10vh; resize: vertical;"></buffer-view>
+
+                <!-- IRIS stacks -->
+                <div style="display: flex;">
+                    <div style="width: 20%; min-width: 100px;">
+                        <h3>call stack</h3>
+                        <div style="height: 200px; overflow: auto;">
+                            <output id="call-stack" style="white-space: pre;"></output>
+                        </div>
+                    </div>
+                    <div style="width: 15%; min-width: 100px;">
+                        <h3>data stack</h3>
+                        <div style="height: 200px; overflow: auto;">
+                            <output id="data-stack" style="white-space: pre;"></output>
+                        </div>
+                    </div>
+                    <div style="width: 80%;">
+                        <h3>register save stack</h3>
+                        <div style="height: 200px; overflow: auto;">
+                            <output id="register-save-stack" style="white-space: pre;"></output>
+                        </div>
+                    </div>
+                </div>
+
             </div>
             <div style="display: flex; gap: 2rem;">
                 <div id="console-tab">

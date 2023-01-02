@@ -20,12 +20,14 @@
             </h2>
             <editor-window id="urcl-source"></editor-window>
         </div>
-        <div>
-            <div>
+        <div style="position: relative;">
+            <div style="position: sticky; top: 0px; background-color: #111; z-index: 100;">
                 <button id="compile-and-reset-button">Compile</button>
                 <button id="pause-button">Pause</button><br>
                 <button id="compile-and-run-button">Compile and run</button>
                 <button id=step-button disabled>Step</button><br>
+            </div>
+            <div>
                 <span style="padding-right: 0.5em;">Clock Speed Hz</span><input type="number" id="clock-speed-input"> <output id="clock-speed-output"></output><br>
                 <span style="padding-right: 0.5em;">Auto Run</span><input type="checkbox" id="auto-run-input" checked> <br>
                 <span style="padding-right: 0.5em;">JIT compilation</span><input type="checkbox" id="jit-box"><br>
@@ -86,6 +88,30 @@
                 <!-- <pre id="memory-view" style="max-height: 12vh; overflow: auto;"></pre> -->
                 <buffer-view id="memory-view" style="width: 100%; height: 10vh; resize: vertical;"></buffer-view>
             </div>
+
+
+            <!-- IRIS stacks -->
+            <div style="display: flex;">
+                <div style="width: 20%; min-width: 100px;">
+                    <h3>call stack</h3>
+                    <div style="height: 200px; overflow: auto;">
+                        <output id="call-stack" style="white-space: pre;"></output>
+                    </div>
+                </div>
+                <div style="width: 10%; min-width: 100px;">
+                    <h3>data stack</h3>
+                    <div style="height: 200px; overflow: auto;">
+                        <output id="data-stack" style="white-space: pre;"></output>
+                    </div>
+                </div>
+                <div style="width: 80%;">
+                    <h3>register save stack</h3>
+                    <div style="height: 200px; overflow: auto;">
+                        <output id="register-save-stack" style="white-space: pre;"></output>
+                    </div>
+                </div>
+            </div>
+
             <div style="display: flex; gap: 2rem;">
                 <div>
                     <h3>Console</h3>

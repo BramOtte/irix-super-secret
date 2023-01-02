@@ -60,6 +60,8 @@ const memory_update_input = document.getElementById("update-mem-input") as HTMLI
 
 const JIT_box = document.getElementById("jit-box") as HTMLInputElement;
 
+// IRIS stuff
+
 const font_file = document.getElementById("font-file") as HTMLInputElement;
 
 font_file.oninput = e => {
@@ -69,6 +71,10 @@ font_file.oninput = e => {
     }
     iris_display.load_font(font);
 }
+
+const call_stack = document.getElementById("call-stack") as HTMLOutputElement;
+const data_stack = document.getElementById("data-stack") as HTMLOutputElement;
+const register_save_stack = document.getElementById("register-save-stack") as HTMLOutputElement;
 
 const url = new URL(location.href, location.origin)
 const srcurl = url.searchParams.get("srcurl");
@@ -473,6 +479,15 @@ function update_views(){
     source_input.set_pc_line(line);
     source_input.set_line_profile(emulator.pc_counters.map((v, i) => [lines[i], v] as [number, number]));
     console_output.flush();
+
+    //---- IRIS stuff
+    register_save_stack.value = emulator.reg_save_stack.map(reg => registers_to_string(emulator)).join("\n");
+    data_stack.value = emulator.data_stack.join("\n");
+    call_stack.value = emulator.call_stack.map(v => {
+        const hex = `0x${v.toString(16).padStart(4, "0")}`;
+        const line_num = emulator.debug_info.pc_line_nrs[v];
+        return line_num ? `${hex} ${line_num} | ${emulator.debug_info.lines[line_num-1].trim()}` : v;
+    }).join("\n");
 }
 change_color_mode();
 

@@ -6,7 +6,9 @@ import { Break } from "./breaks.js";
 import { Step_Result, IntArray, Run, Step, UintArray } from "./IEmu.js";
 export { Step_Result } from "./IEmu.js"
 
-type WordArray = UintArray;
+declare global {
+    type WordArray = UintArray;
+}
 
 interface Emu_Options {
     error?: (a: string) => never;
@@ -135,6 +137,10 @@ export class Emulator implements Instruction_Ctx, Device_Host {
         for (const device of this.devices){
             device.bits = bits;
         }
+
+        this.call_stack = [];
+        this.data_stack = [];
+        this.reg_save_stack = [];
     }
 
     compiled = false;
@@ -577,5 +583,26 @@ step(): Step_Result {
             str += `\n${index}|${h}|${value}|${mem}|${linenr}|${opcode}`
         }
         return str
+    }
+
+
+    //---- Iris stuff
+    call_stack: number[] = [];
+    data_stack: number[] = [];
+    reg_save_stack: WordArray[] = [];
+
+    save_reg() {
+        const max_save = 10_000;
+        if (this.reg_save_stack.length > max_save) {
+            throw new Error("register save stack overflow");
+        }
+        this.reg_save_stack.push(this.registers.slice());
+    }
+    restore_reg(): void {
+        const registers = this.reg_save_stack.pop();
+        if (registers === undefined) {
+            throw new Error("register save stack underflow");
+        }
+        this.registers.set(registers);
     }
 }

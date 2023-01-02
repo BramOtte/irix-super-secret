@@ -30,7 +30,13 @@ export enum Opcode {
     __ASSERT_NEQ,
 
     //----- experimental instructions
-    UMLT, SUMLT 
+    UMLT, SUMLT,
+
+
+    //----- iris instructions
+    HCAL, HRET,
+    HSAV, HRSR,
+    HPSH, HPOP 
 }
 
 export enum Register {
@@ -132,6 +138,12 @@ export interface Instruction_Ctx {
     in(port: number): boolean;
     out(port: number, value: number): void;
     warn(msg: string): void;
+
+    // ---- iris stuff
+    call_stack: number[];
+    data_stack: number[];
+    save_reg(): void;
+    restore_reg(): void;
 }
 
 type Instruction_Callback = (ctx: Instruction_Ctx) => void | boolean;
@@ -281,7 +293,40 @@ export const Opcodes_operants: Record<Opcode, [Operant_Operation[], Instruction_
 
     //----- Experimental Instructions
     [Opcode.UMLT]: [[SET, GET, GET], (s) => {s.a = (s.b * s.c) / (2 ** s._bits);}],
-    [Opcode.SUMLT]: [[SET, GET, GET], (s) => {s.sa = Math.floor((s.sb * s.sc) / (2 ** s._bits));}]
+    [Opcode.SUMLT]: [[SET, GET, GET], (s) => {s.sa = Math.floor((s.sb * s.sc) / (2 ** s._bits));}],
+
+    //----- Iris Instructions
+    [Opcode.HCAL]: [[GET], (s) => {
+        const max_call = 10_000;
+        if (s.call_stack.length > max_call) {
+            throw new Error("call stack overflow");
+        }
+        s.call_stack.push(s.pc);
+        s.pc = s.a;
+    }],
+    [Opcode.HRET]: [[], (s) => {
+        const target = s.call_stack.pop();
+        if (target === undefined) {
+            throw new Error("call stack underflow");
+        }
+        s.pc = target;
+    }],
+    [Opcode.HSAV]: [[], (s) => {s.save_reg()}],
+    [Opcode.HRSR]: [[], (s) => {s.restore_reg()}],
+    [Opcode.HPSH]: [[GET], (s) => {
+        const max_data = 10_000;
+        if (s.data_stack.length >= max_data) {
+            throw new Error("data stack overflow");
+        }
+        s.data_stack.push(s.a)
+    }],
+    [Opcode.HPOP]: [[SET], (s) => {
+        const value = s.data_stack.pop();
+        if (value === undefined) {
+            throw new Error("data stack underflow");
+        }
+        s.a = value;
+    }],
 };
 
 export const inst_fns: Record<Opcode, Instruction_Callback> 
