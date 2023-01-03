@@ -117,3 +117,7 @@ select {
 .major-button {
   margin: 0.5em;
 }
+
+output {
+  font-family: monospace, monospace;
+}

@@ -41,11 +41,13 @@ export function hex(num: number, size: number, pad=" "){
 export function hex_size(bits: number){
     return Math.ceil(bits / 4);
 }
-export function registers_to_string(emulator: Emulator) {
-    const nibbles = hex_size(emulator._bits);
-    return Array.from({ length: register_count }, (_,i) => pad_center(Register[i], nibbles) + " ").join("") +
-        Array.from({ length: emulator.registers.length - register_count }, (_, i) => pad_left(`R${i + 1}`, nibbles) + " ").join("") + "\n" +
-        Array.from(emulator.registers, (v)=> hex(v, nibbles) + " ").join("");
+export function registers_to_string(registers: WordArray, bits: number, do_headers = true) {
+    const nibbles = hex_size(bits);
+    return (
+            !do_headers ? "" : Array.from({ length: register_count }, (_,i) => pad_center(Register[i], nibbles) + " ").join("") +
+            Array.from({ length: registers.length - register_count }, (_, i) => pad_left(`R${i + 1}`, nibbles) + " ").join("") + "\n"
+        ) +
+        Array.from(registers, (v)=> hex(v, nibbles) + " ").join("");
 }
 
 export function memoryToString(view: Arr, from = 0x0, length = 0x1000, bits = 8) {

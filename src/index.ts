@@ -473,7 +473,7 @@ function update_views(){
         memory_view.update();
     }
     register_view.innerText = 
-        registers_to_string(emulator)
+        registers_to_string(emulator.registers, emulator._bits)
     const lines = emulator.debug_info.pc_line_nrs
     const line = lines[Math.min(emulator.pc, lines.length-1)];
     source_input.set_pc_line(line);
@@ -481,7 +481,7 @@ function update_views(){
     console_output.flush();
 
     //---- IRIS stuff
-    register_save_stack.value = emulator.reg_save_stack.map(reg => registers_to_string(emulator)).join("\n");
+    register_save_stack.value = emulator.reg_save_stack.map((reg, i) => registers_to_string(reg, emulator._bits, i === 0)).join("\n");
     data_stack.value = emulator.data_stack.join("\n");
     call_stack.value = emulator.call_stack.map(v => {
         const hex = `0x${v.toString(16).padStart(4, "0")}`;
