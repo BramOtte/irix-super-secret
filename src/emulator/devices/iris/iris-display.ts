@@ -136,7 +136,7 @@ export class Iris_Display implements Device {
         [IO_Port.Y2]: (y: number) => {this.y2 = y;},
         [IO_Port.LINE]: this.line_out,
         [IO_Port.TEXT]: (x: number) => {
-            if (x == '\n'.charCodeAt(0)) {
+            if (x > 255) {
                 this.display.x = 0;
                 this.display.y += th;
             } else {

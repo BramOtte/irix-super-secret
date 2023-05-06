@@ -4,14 +4,14 @@ import { enum_count, enum_from_str, enum_strings, f16_encode, f32_encode, i53, i
 
 const iris_font = "0123456789ABCDEFGHIJKLMNOPQRSTUV"
                 + "WXYZabcdefghijklmnopqrstuvwxyz+-"
-                + "=/*!?%.,()[]{}<>  :;_|~^~\\     "
+                + "=/*!?%.,()[]{}<>  :;_| ^ \\      "
                 + "                                "
                 + "                                "
                 + "                                "
                 + "                                "
-                + "                             ~~~"
+                + "                                \n"
                 ;
-const font: undefined | Map<number, number> = font_map(iris_font);
+export const font: undefined | Map<number, number> = font_map(iris_font);
 
 function font_map(font: string) {
     // console.log("space", " ".codePointAt(0));
@@ -19,6 +19,7 @@ function font_map(font: string) {
     for (let i = 0; i < font.length; i++) {
         map.set(font.charCodeAt(i) ?? -1, i);
     }
+    map.set(160, 255);
     // console.log(map, map.get(" ".codePointAt(0) ?? 0));
     return map;
 }
