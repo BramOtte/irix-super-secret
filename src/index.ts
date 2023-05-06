@@ -33,8 +33,8 @@ let clock_speed = 0;
 let clock_count = 0;
 
 const source_input = document.getElementById("urcl-source") as Editor_Window;
-const output_element = document.getElementById("output") as HTMLElement;
-const debug_output_element = document.getElementById("debug-output") as HTMLElement;
+const output_element = document.getElementById("output") as HTMLOutputElement;
+const debug_output_element = document.getElementById("debug-output") as HTMLOutputElement;
 const memory_view = document.getElementById("memory-view") as BufferView;
 const register_view = document.getElementById("register-view") as HTMLElement;
 
@@ -239,7 +239,7 @@ function resize_display(){
     display.resize(width, height);
 }
 
-const emulator = new Emulator({on_continue: frame, warn: (msg) => output_element.innerText += `${msg}\n`});
+const emulator = new Emulator({on_continue: frame, warn: (msg) => output_element.value += `${msg}\n`});
 emulator.add_io_device(new Sound())
 emulator.add_io_device(console_io);
 emulator.add_io_device(display);
