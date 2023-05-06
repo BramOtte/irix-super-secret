@@ -4,7 +4,7 @@ import { enum_count, enum_from_str, enum_strings, f16_encode, f32_encode, i53, i
 
 const iris_font = "0123456789ABCDEFGHIJKLMNOPQRSTUV"
                 + "WXYZabcdefghijklmnopqrstuvwxyz+-"
-                + "=/*!?%.,()[]{}<>  :;_| ^ \\      "
+                + "=/*!?%.,()[]{}<>  :;_| ^~\\°&  '$"
                 + "                                "
                 + "                                "
                 + "                                "
