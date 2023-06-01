@@ -12,11 +12,11 @@ export class Gl_Display implements Device {
     private gl_texture: WebGLTexture;
     private uni_mode: WebGLUniformLocation;
     // private gl_program: WebGLProgram;
-    public buffer: Uint32Array;
+    private buffer: Uint32Array;
     private bytes: Uint8Array;
     private buffer_enabled: 1 | 0 = 0;
-    public x = 0;
-    public y = 0;
+    private x = 0;
+    private y = 0;
     private pref_display?: HTMLElement | null = globalThis?.document?.getElementById?.("pref-display");
     bits = 8;
 
@@ -42,7 +42,7 @@ export class Gl_Display implements Device {
         this.buffer_enabled = 0;
         this.update_display();
     }
-
+    
     public includes(x: number, y: number): boolean {
         return x >= 0 && x < this.width
             && y >= 0 && y < this.height;
@@ -160,7 +160,7 @@ export class Gl_Display implements Device {
             return;
         }
         this.buffer[this.x + this.y * this.width] = color;
-        this.dirty_display();
+        this.is_dirty = true;
     }
     buffer_in(): number {
         return this.buffer_enabled;
@@ -168,16 +168,28 @@ export class Gl_Display implements Device {
     start_t = 0;
     buffer_out(value: number){
         switch (value){
+            // %BUFFER 0: disable the buffer
             case 0: {
+                this.buffer_enabled = 0;
+                this.is_dirty = true;
+            } break;
+            // %BUFFER 1: if the buffer disabled enable it leaving the display unchanged (the buffer starts cleared)
+            //  otherwise do nothing
+            case 1: {
+                if (this.buffer_enabled) {
+                    break
+                }
                 this.update_display();
                 this.clear();
-                this.buffer_enabled = 0;
-            } break;
-            case 1: {
-                this.start_t = performance.now();
                 this.buffer_enabled = 1;
+                this.start_t = performance.now();
             } break;
+            // %BUFFER 2: if the buffer is enabled update the display
+            //  otherwise clear the display
             case 2: {
+                if (!this.buffer_enabled) {
+                    this.clear();
+                }
                 this.update_display();
                 if (this.pref_display){
                     const end_t = performance.now();
@@ -201,10 +213,9 @@ export class Gl_Display implements Device {
     }
 
     dirty_display(){
-        if (!this.buffer_enabled){
-            this.update_display();
-        }
+        this.is_dirty = true;
     }
+    private is_dirty = true;
 
     public update_display(){
         let {gl, width, height, bytes, uni_mode, color_mode, bits} = this;
@@ -220,6 +231,12 @@ export class Gl_Display implements Device {
         gl.uniform1ui(uni_mode, color_mode)
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
         gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+        this.is_dirty = false;
+    }
+    public flush() {
+        if (!this.buffer_enabled && this.is_dirty) {
+            this.update_display();
+        }
     }
 
     private in_bounds(x: number, y: number){
