@@ -2,28 +2,6 @@ import { Break, BreakFlag, break_flag } from "./breaks.js";
 import { Constants, Header_Operant, IO_Port as IO_Port, Opcode, Opcodes_operant_lengths as Opcodes_operant_counts, Operant_Prim, Operant_Type, Register, register_count, URCL_Header, urcl_headers } from "./instructions.js";
 import { enum_count, enum_from_str, enum_strings, f16_encode, f32_encode, i53, is_digit, warn, Warning, Word } from "./util.js";
 
-const iris_font = "0123456789ABCDEFGHIJKLMNOPQRSTUV"
-                + "WXYZabcdefghijklmnopqrstuvwxyz+-"
-                + "=/*!?%.,()[]{}<>  :;_| ^~\\°&  '$"
-                + "                                "
-                + "                                "
-                + "                                "
-                + "                                "
-                + "                                \n"
-                ;
-export const font: undefined | Map<number, number> = font_map(iris_font);
-
-function font_map(font: string) {
-    // console.log("space", " ".codePointAt(0));
-    const map = new Map<number, number>();
-    for (let i = 0; i < font.length; i++) {
-        map.set(font.charCodeAt(i) ?? -1, i);
-    }
-    map.set(160, 255);
-    // console.log(map, map.get(" ".codePointAt(0) ?? 0));
-    return map;
-}
-
 function try_parse_int(x: string){
     const int = my_parse_int(x);
     return Number.isInteger(int) ? int : undefined;
@@ -549,9 +527,9 @@ function parse_operant(
                 return undefined;
             }
             let code = char_lit.codePointAt(0) ?? 0;
-            const real_code = font?.get(code);
-            // console.log(char_lit, code, real_code);
-            code = real_code ?? code;
+            // const real_code = font?.get(code);
+            // // console.log(char_lit, code, real_code);
+            // code = real_code ?? code;
 
             return [Operant_Type.Imm, code];
         }
@@ -570,8 +548,8 @@ function parse_operant(
                     }
                     for (let i = 0; i < string.length; i++){
                         let code = string.codePointAt(i) ?? 0;
-                        const real_code = font?.get(code);
-                        code = real_code ?? code;
+                        // const real_code = font?.get(code);
+                        // code = real_code ?? code;
                         data.push(code);
                     }
                     return [Operant_Type.String, value];

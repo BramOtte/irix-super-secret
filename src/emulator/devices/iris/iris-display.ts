@@ -21,7 +21,7 @@ const iris_font = "0123456789ABCDEFGHIJKLMNOPQRSTUV"
                 + "                                "
                 + "                                \n"
                 ;
-export const font: Map<number, number> = font_map(iris_font);
+export const font_mapping: Map<number, number> = font_map(iris_font);
 
 function font_map(font: string) {
     // console.log("space", " ".codePointAt(0));
@@ -159,7 +159,7 @@ export class Iris_Display implements Device {
         [IO_Port.Y2]: (y: number) => {this.y2 = y;},
         [IO_Port.LINE]: this.line_out,
         [IO_Port.TEXT]: (i: number) => {
-            const x = font.get(i) ?? 500;
+            const x = font_mapping.get(i) ?? 500;
             if (x == 256) {
                 this.display.x = 0;
                 this.display.y += th;
