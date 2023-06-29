@@ -1,4 +1,4 @@
-import {enum_count, object_map} from "./util.js";
+import {enum_count, f16_decode, f16_encode, object_map} from "./util.js";
 
 // export 
 export enum Opcode {
@@ -36,7 +36,13 @@ export enum Opcode {
     //----- iris instructions
     HCAL, HRET,
     HSAV, HRSR,
-    HPSH, HPOP 
+    HPSH, HPOP ,
+
+    FPTOINT,
+    INTTOFP,
+    FPADD,
+    FPMLT,
+    FPDIV
 }
 
 export enum Register {
@@ -327,7 +333,24 @@ export const Opcodes_operants: Record<Opcode, [Operant_Operation[], Instruction_
         }
         s.a = value;
     }],
+
+    [Opcode.INTTOFP]: [[SET, GET], (s) => {
+        s.a = f16_encode(s.b)
+    }],
+    [Opcode.FPTOINT]: [[SET, GET], (s) => {
+        s.a = f16_decode(s.b)
+    }],
+    [Opcode.FPADD]: [[SET, GET, GET], (s) => {
+        s.a = f16_encode(f16_decode(s.b) + f16_decode(s.c));
+    }],
+    [Opcode.FPMLT]: [[SET, GET, GET], (s) => {
+        s.a = f16_encode(f16_decode(s.b) * f16_decode(s.c));
+    }],
+    [Opcode.FPDIV]: [[SET, GET, GET], (s) => {
+        s.a = f16_encode(f16_decode(s.b) / f16_decode(s.c));
+    }],
 };
+
 
 export const inst_fns: Record<Opcode, Instruction_Callback> 
     = object_map(Opcodes_operants, (key, value)=>{
