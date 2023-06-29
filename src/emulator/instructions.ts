@@ -38,11 +38,13 @@ export enum Opcode {
     HSAV, HRSR,
     HPSH, HPOP ,
 
-    FPTOINT,
-    INTTOFP,
-    FPADD,
-    FPMLT,
-    FPDIV
+    FTOI,
+    ITOF,
+    FMLT,
+    FDIV,
+    FADD,
+    FSUB,
+    FABS,
 }
 
 export enum Register {
@@ -334,21 +336,28 @@ export const Opcodes_operants: Record<Opcode, [Operant_Operation[], Instruction_
         s.a = value;
     }],
 
-    [Opcode.INTTOFP]: [[SET, GET], (s) => {
+    [Opcode.ITOF]: [[SET, GET], (s) => {
         s.a = f16_encode(s.b)
     }],
-    [Opcode.FPTOINT]: [[SET, GET], (s) => {
+    [Opcode.FTOI]: [[SET, GET], (s) => {
         s.a = f16_decode(s.b)
     }],
-    [Opcode.FPADD]: [[SET, GET, GET], (s) => {
+    [Opcode.FADD]: [[SET, GET, GET], (s) => {
         s.a = f16_encode(f16_decode(s.b) + f16_decode(s.c));
     }],
-    [Opcode.FPMLT]: [[SET, GET, GET], (s) => {
+    [Opcode.FMLT]: [[SET, GET, GET], (s) => {
         s.a = f16_encode(f16_decode(s.b) * f16_decode(s.c));
     }],
-    [Opcode.FPDIV]: [[SET, GET, GET], (s) => {
+    [Opcode.FDIV]: [[SET, GET, GET], (s) => {
         s.a = f16_encode(f16_decode(s.b) / f16_decode(s.c));
     }],
+    [Opcode.FSUB]: [[SET, GET, GET], (s) => {
+        s.a = f16_encode(f16_decode(s.b) - f16_decode(s.c));
+    }],
+    [Opcode.FABS]: [[SET, GET], (s) => {
+        s.a = f16_encode(Math.abs(f16_decode(s.b)));
+    }],
+    
 };
 
 
