@@ -532,7 +532,7 @@ step(): Step_Result {
         const {pc_line_nrs, lines, file_name} = this.debug_info;
         const line_nr = pc_line_nrs[this.pc-1];
         const trace = this.decode_memory(this.stack_ptr, this.memory.length, false);
-        const content = `${file_name??"eval"}:${line_nr + 1} - ERROR - ${msg}\n    ${lines[line_nr]}\n\n${indent(registers_to_string(this), 1)}\n\nstack trace:\n${trace}`;
+        const content = `${file_name??"eval"}:${line_nr + 1} - ERROR - ${msg}\n    ${lines[line_nr]}\n\n${indent(registers_to_string(this.registers, this._bits, true), 1)}\n\nstack trace:\n${trace}`;
         if (this.options.error){
             this.options.error(content)
         }
