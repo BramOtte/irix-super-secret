@@ -158,23 +158,23 @@ export class Iris_Display implements Device {
         [IO_Port.X2]: (x: number) => {this.x2 = x;},
         [IO_Port.Y2]: (y: number) => {this.y2 = y;},
         [IO_Port.LINE]: this.line_out,
-        [IO_Port.TEXT]: (i: number) => {
-            const x = font_mapping.get(i) ?? 500;
+    };
+
+    inputs = {
+
+    };
+
+
+    write_text(text: string) {
+        for (let i = 0; i < text.length; i++) {
+            const c = text.charCodeAt(i);
+            const x = font_mapping.get(c) ?? 500;
             if (x == 256) {
                 this.display.x = 0;
                 this.display.y += th;
             } else {
                 this.tile_out(x);
             }
-        },
-        [IO_Port.NUMB]: (x: number) => {
-            for (const char of ""+x) {
-                this.tile_out(char.charCodeAt(0) - '0'.charCodeAt(0));
-            }
         }
-    };
-
-    inputs = {
-
-    };
+    }
 }

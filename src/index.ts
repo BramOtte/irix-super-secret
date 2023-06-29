@@ -185,25 +185,7 @@ console_copy.addEventListener("click", e => {
     navigator.clipboard.writeText(console_output.get_text());
 });
 
-const console_io = new Console_IO({
-        read(callback){
-            input_callback = callback;
-        },
-        get text(){
-            return console_input.value;
-        },
-        set text(value: string){
-            console_input.value = value;
-        }
-    }, 
-    (text) => {
-        console_output.write(text)
-    },
-    () => {
-        console_output.clear();
-        input_callback = undefined
-    }
-);
+
 const canvas = document.getElementsByTagName("canvas")[0];
 const gl = canvas.getContext("webgl2");
 if (!gl){
@@ -238,6 +220,28 @@ function resize_display(){
     const height = parseInt(height_input.value) || 16;
     display.resize(width, height);
 }
+
+
+const console_io = new Console_IO({
+    read(callback){
+        input_callback = callback;
+    },
+    get text(){
+        return console_input.value;
+    },
+    set text(value: string){
+        console_input.value = value;
+    }
+}, 
+(text) => {
+    iris_display.write_text(text);
+    console_output.write(text)
+},
+() => {
+    console_output.clear();
+    input_callback = undefined
+}
+);
 
 const emulator = new Emulator({on_continue: frame, warn: (msg) => output_element.value += `${msg}\n`});
 emulator.add_io_device(new Sound())
