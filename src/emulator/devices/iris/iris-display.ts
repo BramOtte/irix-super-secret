@@ -11,6 +11,29 @@ const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
 const font_msg = (document.getElementById("font-msg") ?? document.createElement("font")) as HTMLOutputElement;
 
+
+const iris_font = "0123456789ABCDEFGHIJKLMNOPQRSTUV"
+                + "WXYZabcdefghijklmnopqrstuvwxyz+-"
+                + "=/*!?%.,()[]{}<>  :;_| ^~\\°&  '$"
+                + "                                "
+                + "                                "
+                + "                                "
+                + "                                "
+                + "                                \n"
+                ;
+export const font: Map<number, number> = font_map(iris_font);
+
+function font_map(font: string) {
+    // console.log("space", " ".codePointAt(0));
+    const map = new Map<number, number>();
+    for (let i = 0; i < font.length; i++) {
+        map.set(font.charCodeAt(i) ?? -1, i);
+    }
+    map.set(160, 255);
+    // console.log(map, map.get(" ".codePointAt(0) ?? 0));
+    return map;
+}
+
 export class Iris_Display implements Device {
     bits = 16;
     colors = new Uint32Array(tw*th * tile_count);
@@ -135,8 +158,9 @@ export class Iris_Display implements Device {
         [IO_Port.X2]: (x: number) => {this.x2 = x;},
         [IO_Port.Y2]: (y: number) => {this.y2 = y;},
         [IO_Port.LINE]: this.line_out,
-        [IO_Port.TEXT]: (x: number) => {
-            if (x > 255) {
+        [IO_Port.TEXT]: (i: number) => {
+            const x = font.get(i) ?? 500;
+            if (x == 256) {
                 this.display.x = 0;
                 this.display.y += th;
             } else {
