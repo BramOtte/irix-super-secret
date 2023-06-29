@@ -600,7 +600,8 @@ function parse_operant(
                     errors.push(warn(line_nr, `Invalid immediate float ${operant}`)); return undefined;
                 }
                 return [Operant_Type.Imm, value];
-            } else if (operant.endsWith("f16")){
+            // TODO: when no postfix adjust based on BITS
+            } else if (operant.endsWith("f16") || operant.includes(".")){
                 const value = my_parse_float(operant);
                 if (value === undefined){
                     errors.push(warn(line_nr, `Invalid immediate float ${operant}`)); return undefined;
