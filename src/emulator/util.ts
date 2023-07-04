@@ -175,7 +175,9 @@ export function f32_encode(float: number){
 
 // IRIS SPECIFIC: bias, normally 15 for IEEE
 const f16_bias = 16;
-const f16_max = 131008;
+const f16_exp_bits = 5;
+const f16_frac_bits = 15 - f16_exp_bits;
+const f16_max = ((2 << f16_frac_bits) - 1) << ((1 << f16_exp_bits) - 1 - f16_bias - f16_frac_bits);
 
 export function f16_decode(int: number){
     if (int === 0){return 0;}
