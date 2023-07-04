@@ -337,7 +337,7 @@ export const Opcodes_operants: Record<Opcode, [Operant_Operation[], Instruction_
     }],
 
     [Opcode.ITOF]: [[SET, GET], (s) => {
-        s.a = f16_encode(s.b)
+        s.a = f16_encode(s.sb)
     }],
     [Opcode.FTOI]: [[SET, GET], (s) => {
         s.a = f16_decode(s.b)
