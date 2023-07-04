@@ -173,6 +173,8 @@ export function f32_encode(float: number){
     return conversion_buffer.getInt32(0, true);
 }
 
+// iris specific bias, normally 15 for IEEE
+const f16_bias = 16;
 const f16_max = 131008;
 
 export function f16_decode(int: number){
@@ -180,7 +182,7 @@ export function f16_decode(int: number){
     const sign = (int >>> 15) & 1;
     const exponent = (int >>> 10) & 31;
     const fraction = int & 1023;
-    let mag = ((fraction/1024) + 1) * 2**(exponent-15);
+    let mag = ((fraction/1024) + 1) * 2**(exponent-f16_bias);
 
     if (mag >= f16_max) {
         mag = Infinity;
@@ -194,15 +196,15 @@ export function f16_encode(float: number){
 
     let exponent = Math.floor(Math.log2(float));
     let fraction = (float / 2**exponent) - 1;
-    if (exponent < -15) {
-        return 0;
+    if (exponent < -f16_bias) {
+        return 0 * sign;
     }
     if (float >= f16_max) {
-        exponent = 31 - 15;
+        exponent = 31 - f16_bias;
         fraction = 1;
     }
 
-    return ((sign < 0 ? 1 : 0) << 15) | (((exponent + 15) & 31) << 10) | (Math.min(1023, Math.round(fraction * 1024)) & 1023);
+    return ((sign < 0 ? 1 : 0) << 15) | (((exponent + f16_bias) & 31) << 10) | (Math.min(1023, Math.round(fraction * 1024)) & 1023);
 }
 
 export function read16(data: Uint8Array, little_endian: boolean, size: number): Uint16Array {
