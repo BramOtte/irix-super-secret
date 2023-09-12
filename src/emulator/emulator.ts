@@ -1,8 +1,8 @@
-import { Word, registers_to_string, indent, hex, pad_center, pad_left } from "./util.js";
+import { Word, registers_to_string, indent, hex, pad_center, pad_left, f16_encode, f16_decode } from "./util.js";
 import {Opcode, Operant_Operation, Operant_Prim, Opcodes_operants, Instruction_Ctx, URCL_Header, IO_Port, Register, Header_Run, register_count, inst_fns, Opcodes_operant_lengths} from "./instructions.js";
 import { Debug_Info, Program } from "./compiler.js";
 import { Device, Device_Host, Device_Input, Device_Output, Device_Reset } from "./devices/device.js";
-import { Break } from "./breaks.js"; 
+import { Break } from "./breaks.js";
 import { Step_Result, IntArray, Run, Step, UintArray } from "./IEmu.js";
 export { Step_Result } from "./IEmu.js"
 
@@ -18,6 +18,8 @@ interface Emu_Options {
 }
 
 export class Emulator implements Instruction_Ctx, Device_Host {
+    f16_encode = f16_encode
+    f16_decode = f16_decode;
     private signed(v: number){
         if (this._bits === 32){
             return 0| v;

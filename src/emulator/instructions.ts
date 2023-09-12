@@ -1,4 +1,4 @@
-import {enum_count, f16_decode, f16_encode, object_map} from "./util.js";
+import {enum_count, object_map} from "./util.js";
 
 // export 
 export enum Opcode {
@@ -152,6 +152,9 @@ export interface Instruction_Ctx {
     data_stack: number[];
     save_reg(): void;
     restore_reg(): void;
+
+    f16_encode(float: number): number;
+    f16_decode(int: number): number;
 }
 
 type Instruction_Callback = (ctx: Instruction_Ctx) => void | boolean;
@@ -337,25 +340,25 @@ export const Opcodes_operants: Record<Opcode, [Operant_Operation[], Instruction_
     }],
 
     [Opcode.ITOF]: [[SET, GET], (s) => {
-        s.a = f16_encode(s.sb)
+        s.a = s.f16_encode(s.sb)
     }],
     [Opcode.FTOI]: [[SET, GET], (s) => {
-        s.a = f16_decode(s.b)
+        s.a = s.f16_decode(s.b)
     }],
     [Opcode.FADD]: [[SET, GET, GET], (s) => {
-        s.a = f16_encode(f16_decode(s.b) + f16_decode(s.c));
+        s.a = s.f16_encode(s.f16_decode(s.b) + s.f16_decode(s.c));
     }],
     [Opcode.FMLT]: [[SET, GET, GET], (s) => {
-        s.a = f16_encode(f16_decode(s.b) * f16_decode(s.c));
+        s.a = s.f16_encode(s.f16_decode(s.b) * s.f16_decode(s.c));
     }],
     [Opcode.FDIV]: [[SET, GET, GET], (s) => {
-        s.a = f16_encode(f16_decode(s.b) / f16_decode(s.c));
+        s.a = s.f16_encode(s.f16_decode(s.b) / s.f16_decode(s.c));
     }],
     [Opcode.FSUB]: [[SET, GET, GET], (s) => {
-        s.a = f16_encode(f16_decode(s.b) - f16_decode(s.c));
+        s.a = s.f16_encode(s.f16_decode(s.b) - s.f16_decode(s.c));
     }],
     [Opcode.FABS]: [[SET, GET], (s) => {
-        s.a = f16_encode(Math.abs(f16_decode(s.b)));
+        s.a = s.f16_encode(Math.abs(s.f16_decode(s.b)));
     }],
     
 };
