@@ -119,11 +119,11 @@ export enum IO_Port {
     MOUSE_DWHEEL,
     MOUSE_BUTTONS,
     FILE,
-
+    DBG_INT,
 
     // Iris ports
     TILE,
-    X1, Y1, X2, Y2, LINE
+    X1, Y1, X2, Y2, LINE,
 }
 
 export interface Instruction_Ctx {
