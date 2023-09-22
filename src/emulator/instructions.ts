@@ -45,6 +45,7 @@ export enum Opcode {
     FADD,
     FSUB,
     FABS,
+    FSQRT,
 }
 
 export enum Register {
@@ -360,7 +361,9 @@ export const Opcodes_operants: Record<Opcode, [Operant_Operation[], Instruction_
     [Opcode.FABS]: [[SET, GET], (s) => {
         s.a = s.f16_encode(Math.abs(s.f16_decode(s.b)));
     }],
-    
+    [Opcode.FSQRT]: [[SET, GET], (s) => {
+        s.a = s.f16_encode(Math.sqrt(s.f16_decode(s.b)));
+    }],
 };
 
 
