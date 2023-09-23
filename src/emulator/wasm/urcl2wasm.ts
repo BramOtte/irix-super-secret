@@ -23,8 +23,16 @@ enum Locals {
     Registers,
 }
 
-export function urcl2wasm(program: Program, debug?: Debug_Info): Uint8Array {
-    const s = new Context(program, debug);
+interface Buffers {
+    wasm_memory: WebAssembly.Memory,
+    registers: WordArray,
+    memory: WordArray,
+    call_stack: WordArray,
+    data_stack: WordArray,
+}
+
+export function urcl2wasm(program: Program, buffer: Buffers, debug?: Debug_Info): Uint8Array {
+    const s = new Context(program, buffer, debug);
     s.bytes(magic).u32(version)
         .u8(Section_Type.type)
             .size_start() // section size
@@ -132,6 +140,8 @@ function generate_run(s: Context) {
     s.size_end()
 }
 
+const memoryback_registers = false;
+
 class Context extends WASM_Writer {
     bits: number
     pc = 0;
@@ -163,9 +173,11 @@ class Context extends WASM_Writer {
     private allign: number;
     memory_blocks: number;
     memory_size: number;
-    sp_start: number;
     min_reg: number;
     min_memory: number;
+
+    call_stack_start: number;
+    data_stack_start: number;
 
     
     private get depth() {
@@ -174,6 +186,7 @@ class Context extends WASM_Writer {
 
     constructor(
         public program: Program,
+        buffers: Buffers,
         public debug?: Debug_Info,
     ) {
         super();
@@ -185,12 +198,14 @@ class Context extends WASM_Writer {
         const min_stack = program.headers[URCL_Header.MINSTACK].value;
         const min_memory = this.min_memory = min_heap + min_stack + program.data.length;
 
-        const min_wasm_memory = (min_reg + min_memory) * (this.bits / 8);
+        const min_wasm_memory = buffers.wasm_memory.buffer.byteLength;
         const memory_block_size = 1024 * 64;
         this.memory_blocks = Math.ceil(min_wasm_memory / memory_block_size);
 
         this.memory_size = this.memory_blocks * memory_block_size;
-        this.sp_start = min_memory;
+        this.call_stack_start = buffers.call_stack.byteOffset;
+        this.data_stack_start = buffers.data_stack.byteOffset;
+
 
         
         if (this.bits == 8) {
@@ -285,8 +300,11 @@ class Context extends WASM_Writer {
     }
 
     _write_reg(index: number) {
-        return this.mask_u().u8(WASM_Opcode.local_set).uvar(index + Locals.Registers);
-        
+        this.mask_u().u8(WASM_Opcode.local_set).uvar(index + Locals.Registers);
+        if (memoryback_registers) {
+            this.store_reg(index);
+        }
+        return this;
     }
     tee_reg(index: number) {
         return this.mask_u().u8(WASM_Opcode.local_tee).uvar(index + Locals.Registers);
@@ -338,8 +356,7 @@ class Context extends WASM_Writer {
     }
     address() {
         if (this.size_shift) {
-            this.u8(WASM_Opcode.i32_const).ivar(this.size_shift)
-                .u8(WASM_Opcode.i32_shl);
+            this.const(this.size_shift).u8(WASM_Opcode.i32_shl);
         }
         return this;
     }
@@ -502,7 +519,7 @@ const stuff: Record<Opcode, undefined | ((s: Context) => void)> = {
     [Opcode.LLOD]: s => {s.b().c().u8(WASM_Opcode.i32_add).address().load_u().wa()},
     [Opcode.LSTR]: s => {s.a().b().u8(WASM_Opcode.i32_add).address().c().store()},
     [Opcode.IN]: s => {
-        s.b().read_reg(Register.PC).u8(WASM_Opcode.call).uvar(s.in_func)
+        s.b().const(s.pc).u8(WASM_Opcode.call).uvar(s.in_func)
             .const(Step_Result.Input).u8(WASM_Opcode.i32_eq).if()
                 .const(Step_Result.Input)
                 .break_ret()
@@ -536,12 +553,35 @@ const stuff: Record<Opcode, undefined | ((s: Context) => void)> = {
             .const64(s.bits).u8(s.bits <= 16 ? WASM_Opcode.i32_shr_s : WASM_Opcode.i64_shr_s)
             .wrap().wa();
     },
-    [Opcode.HCAL]: undefined,
-    [Opcode.HRET]: undefined,
+    [Opcode.HCAL]: s => {
+        s.read_reg(Register._CSP)
+            .address().const(s.call_stack_start).u8(WASM_Opcode.i32_add)
+            .const(s.pc + 1)
+            .store();
+        s.read_reg(Register._CSP).const(1).u8(WASM_Opcode.i32_add).write_reg(Register._CSP);
+        s.a().jump(0);
+    },
+    [Opcode.HRET]: s => {
+        s.read_reg(Register._CSP).const(1).u8(WASM_Opcode.i32_sub);
+        s.tee_reg(Register._CSP)
+            .address().const(s.call_stack_start).u8(WASM_Opcode.i32_add)
+            .load_u().jump(0);
+    },
     [Opcode.HSAV]: undefined,
     [Opcode.HRSR]: undefined,
-    [Opcode.HPSH]: undefined,
-    [Opcode.HPOP]: undefined,
+    [Opcode.HPSH]: s => {
+        s.read_reg(Register._DSP)
+            .address().const(s.data_stack_start).u8(WASM_Opcode.i32_add)
+            .a()
+            .store();
+        s.read_reg(Register._DSP).const(1).u8(WASM_Opcode.i32_add).write_reg(Register._DSP);
+    },
+    [Opcode.HPOP]: s => {
+        s.read_reg(Register._DSP).const(1).u8(WASM_Opcode.i32_sub);
+        s.tee_reg(Register._DSP)
+            .address().const(s.data_stack_start).u8(WASM_Opcode.i32_add)
+            .load_u().wa();
+    },
     [Opcode.FTOI]: s => {
         s.b()
         f16_to_f32(s);

@@ -1,6 +1,11 @@
+import { IntArray } from "./IEmu.js";
 import {enum_count, object_map} from "./util.js";
 
-// export 
+
+
+export const call_stack_cap = 10_000;
+export const data_stack_cap = 10_000;
+
 export enum Opcode {
     // Core Instructions
     ADD, RSH, LOD, STR, BGE, NOR, IMM,
@@ -49,7 +54,7 @@ export enum Opcode {
 }
 
 export enum Register {
-    PC, SP
+    PC, SP, _DSP, _CSP
 }
 export const register_count = enum_count(Register);
 
@@ -149,8 +154,15 @@ export interface Instruction_Ctx {
     warn(msg: string): void;
 
     // ---- iris stuff
-    call_stack: number[];
-    data_stack: number[];
+    csp: number;
+    dsp: number;
+    call_stack: WordArray;
+    call_stack_cap: number;
+
+    data_stack: WordArray;
+    data_stack_cap: number;
+    
+    
     save_reg(): void;
     restore_reg(): void;
 
@@ -309,35 +321,31 @@ export const Opcodes_operants: Record<Opcode, [Operant_Operation[], Instruction_
 
     //----- Iris Instructions
     [Opcode.HCAL]: [[GET], (s) => {
-        const max_call = 10_000;
-        if (s.call_stack.length > max_call) {
+        if (s.csp >= s.call_stack_cap) {
             throw new Error("call stack overflow");
         }
-        s.call_stack.push(s.pc);
+        s.call_stack[s.csp++] = s.pc;
         s.pc = s.a;
     }],
     [Opcode.HRET]: [[], (s) => {
-        const target = s.call_stack.pop();
-        if (target === undefined) {
-            throw new Error("call stack underflow");
+        if (s.csp <= 0) {
+            throw new Error("call stack underflow")
         }
-        s.pc = target;
+        s.pc = s.call_stack[--s.csp];
     }],
     [Opcode.HSAV]: [[], (s) => {s.save_reg()}],
     [Opcode.HRSR]: [[], (s) => {s.restore_reg()}],
     [Opcode.HPSH]: [[GET], (s) => {
-        const max_data = 10_000;
-        if (s.data_stack.length >= max_data) {
+        if (s.dsp >= s.data_stack_cap) {
             throw new Error("data stack overflow");
         }
-        s.data_stack.push(s.a)
+        s.data_stack[s.dsp++] = s.a;
     }],
     [Opcode.HPOP]: [[SET], (s) => {
-        const value = s.data_stack.pop();
-        if (value === undefined) {
-            throw new Error("data stack underflow");
+        if (s.dsp <= 0) {
+            throw new Error("data stack underflow")
         }
-        s.a = value;
+        s.a = s.data_stack[--s.dsp];
     }],
 
     [Opcode.ITOF]: [[SET, GET], (s) => {

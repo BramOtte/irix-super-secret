@@ -1,5 +1,5 @@
 import { Word, registers_to_string, indent, hex, pad_center, pad_left, f16_encode, f16_decode } from "./util.js";
-import {Opcode, Operant_Operation, Operant_Prim, Opcodes_operants, Instruction_Ctx, URCL_Header, IO_Port, Register, Header_Run, register_count, inst_fns, Opcodes_operant_lengths} from "./instructions.js";
+import {Opcode, Operant_Operation, Operant_Prim, Opcodes_operants, Instruction_Ctx, URCL_Header, IO_Port, Register, Header_Run, register_count, inst_fns, Opcodes_operant_lengths, call_stack_cap, data_stack_cap} from "./instructions.js";
 import { Debug_Info, Program } from "./compiler.js";
 import { Device, Device_Host, Device_Input, Device_Output, Device_Reset } from "./devices/device.js";
 import { Break } from "./breaks.js";
@@ -56,12 +56,14 @@ export class Emulator implements Instruction_Ctx, Device_Host {
     constructor(public options: Emu_Options){
 
     }
+    call_stack: UintArray = new Uint16Array();
+    data_stack: UintArray = new Uint16Array();
     private heap_size = 0;
     private do_debug_memory = false;
     private do_debug_registers = false;
     private do_debug_ports = false;
     private do_debug_program = false;
-    private wasm_memory = new WebAssembly.Memory({initial: 2});
+    wasm_memory = new WebAssembly.Memory({initial: 2});
 
     private jit_run?: Run;
     private jit_step?: Step;
@@ -118,7 +120,7 @@ export class Emulator implements Instruction_Ctx, Device_Host {
         if (memory_size > this.max_size){
             throw new Error(`Too much memory heap:${heap} + stack:${stack} + dws:${static_data.length} = ${memory_size}, must be <= ${this.max_size}`);
         }
-        const buffer_size = (memory_size + register_file_length) * WordArray.BYTES_PER_ELEMENT;
+        const buffer_size = (memory_size + register_file_length + call_stack_cap + data_stack_cap) * WordArray.BYTES_PER_ELEMENT;
         const block_size = 1024 * 64;
         const block_count = Math.ceil(buffer_size / block_size);
         this.wasm_memory = new WebAssembly.Memory({initial: block_count});
@@ -143,8 +145,12 @@ export class Emulator implements Instruction_Ctx, Device_Host {
             device.bits = bits;
         }
 
-        this.call_stack = [];
-        this.data_stack = [];
+        const call_stack_offset = this.registers.byteOffset + this.registers.byteLength;
+        this.call_stack = new WordArray(this.buffer, call_stack_offset, call_stack_cap);
+
+        const data_stack_offset = this.call_stack.byteOffset + this.call_stack.byteLength;
+        this.data_stack = new WordArray(this.buffer, data_stack_offset, data_stack_cap);
+        
         this.reg_save_stack = [];
     }
 
@@ -165,7 +171,7 @@ export class Emulator implements Instruction_Ctx, Device_Host {
         const emulator = this;
         const memory = this.wasm_memory;
 
-        const byte_code = urcl2wasm(this.program, this.debug_info);
+        const byte_code = urcl2wasm(this.program, this, this.debug_info);
         const imports: WASM_Imports = {
             env: {
                 in(port: number, pc: number): Step_Result {
@@ -648,8 +654,15 @@ step(): Step_Result {
 
 
     //---- Iris stuff
-    call_stack: number[] = [];
-    data_stack: number[] = [];
+    call_stack_cap = call_stack_cap;
+    data_stack_cap = call_stack_cap;
+
+    get csp() {return this.registers[Register._CSP];}
+    set csp(value) {this.registers[Register._CSP] = value;}
+
+    get dsp() {return this.registers[Register._DSP];}
+    set dsp(value) {this.registers[Register._DSP] = value;}
+
     reg_save_stack: WordArray[] = [];
 
     save_reg() {
