@@ -16,8 +16,11 @@ export type WASM_Imports = WebAssembly.Imports & {
     }
 }
 
+const arg_len = 0;
+
 enum Locals {
-    Registers
+    Sign, Exp, Frac,
+    Registers,
 }
 
 export function urcl2wasm(program: Program, debug?: Debug_Info): Uint8Array {
@@ -90,7 +93,7 @@ function generate_run(s: Context) {
     const program_length = s.program.opcodes.length;
     const min_reg = s.program.headers[URCL_Header.MINREG].value;
     s.uvar(1) // local count
-        .uvar(min_reg + register_count + Locals.Registers) // local repeat
+        .uvar(min_reg + register_count + Locals.Registers - arg_len) // local repeat
         .u8(WASM_Type.i32);             // local type
     
     s.load_regfile();    
@@ -108,11 +111,16 @@ function generate_run(s: Context) {
     }
     s.uvar(program_length);
     s.u8(WASM_Opcode.end);
-    s.pc = 0;
-    for (let i = 0; i < program_length; ++i) {
-        stuff[s.program.opcodes[i]]?.(s);
+    for (s.pc = 0; s.pc < program_length; ++s.pc) {
+        const opcode = s.program.opcodes[s.pc]
+        const fn = stuff[opcode];
+        if (fn === undefined) {
+            const msg = `WASM backend does not implement opcode ${opcode} ${Opcode[opcode]}`;
+            console.error(msg);
+            throw new Error(msg);
+        }
+        fn(s);
         s.u8(WASM_Opcode.end);
-        s.pc += 1;
     }
     
     s.end();
@@ -210,6 +218,10 @@ class Context extends WASM_Writer {
         this.allign = 0;
     }
 
+    block(type = 64) {
+        return this.u8(WASM_Opcode.block).uvar(type);
+    }
+
     load_reg(i: number) {
         return this.const((i + this.min_memory) << this.size_shift).load_u()._write_reg(i);
     }
@@ -242,6 +254,9 @@ class Context extends WASM_Writer {
             }
         } else {
             this.const(value);
+            if (signed && value > this.max_s) {
+                this.sign_extend()
+            }
         }
 
         return this;
@@ -276,7 +291,11 @@ class Context extends WASM_Writer {
     tee_reg(index: number) {
         return this.mask_u().u8(WASM_Opcode.local_tee).uvar(index + Locals.Registers);
     }
-    write_local(index: number) {
+    tee_local(index: number) {
+        return this.u8(WASM_Opcode.local_tee).uvar(index);
+    }
+
+    set_local(index: number) {
         return this.u8(WASM_Opcode.local_set).uvar(index);
     }
     get_local(index: number) {
@@ -285,10 +304,16 @@ class Context extends WASM_Writer {
 
     sign_extend() {
         if (this.should_mask) {
-            this.const(this.max).u8(WASM_Opcode.i32_and)
-                .const(~this.max).u8(WASM_Opcode.i32_or)
-                .const(this.sign_bit).u8(WASM_Opcode.i32_add)
-                .const(~this.max_s).u8(WASM_Opcode.i32_xor);
+            if (this.bits == 16) {
+                this.u8(WASM_Opcode.i32_extend16_s)
+            } else if (this.bits == 8) {
+                this.u8(WASM_Opcode.i32_extend16_s)
+            } else {
+                this.const(this.max).u8(WASM_Opcode.i32_and)
+                    .const(~this.max).u8(WASM_Opcode.i32_or)
+                    .const(this.sign_bit).u8(WASM_Opcode.i32_add)
+                    .const(~this.max_s).u8(WASM_Opcode.i32_xor);
+            }
         }
         return this;
     }
@@ -505,8 +530,182 @@ const stuff: Record<Opcode, undefined | ((s: Context) => void)> = {
             .const64(s.bits).u8(s.bits <= 16 ? WASM_Opcode.i32_shr_s : WASM_Opcode.i64_shr_s)
             .wrap().wa();
     },
+    [Opcode.HCAL]: undefined,
+    [Opcode.HRET]: undefined,
+    [Opcode.HSAV]: undefined,
+    [Opcode.HRSR]: undefined,
+    [Opcode.HPSH]: undefined,
+    [Opcode.HPOP]: undefined,
+    [Opcode.FTOI]: s => {
+        s.b()
+        f16_to_f32(s);
+        s.u8(WASM_Opcode.i32_trunc_f32_s)
+        s.wa()
+    },
+    [Opcode.ITOF]: s => {
+        s.sb().u8(WASM_Opcode.f32_convert_i32_s)
+        f32_to_f16(s);
+        s.wa()
+    },
+    [Opcode.FMLT]: s => {
+        s.b(); f16_to_f32(s);
+        s.c(); f16_to_f32(s);
+        s.u8(WASM_Opcode.f32_mul);
+        f32_to_f16(s)
+        s.wa()
+    },
+    [Opcode.FDIV]: s => {
+        s.b(); f16_to_f32(s);
+        s.c(); f16_to_f32(s);
+        s.u8(WASM_Opcode.f32_div);
+        f32_to_f16(s)
+        s.wa()
+    },
+    [Opcode.FADD]: s => {
+        s.b(); f16_to_f32(s);
+        s.c(); f16_to_f32(s);
+        s.u8(WASM_Opcode.f32_add);
+        f32_to_f16(s)
+        s.wa()
+    },
+    [Opcode.FSUB]: s => {
+        s.b(); f16_to_f32(s);
+        s.c(); f16_to_f32(s);
+        s.u8(WASM_Opcode.f32_sub);
+        f32_to_f16(s)
+        s.wa()
+    },
+    [Opcode.FABS]: s => {
+        s.b();
+        f16_to_f32(s);
+        s.u8(WASM_Opcode.f32_abs);
+        f32_to_f16(s)
+        s.wa()
+    },
+    [Opcode.FSQRT]: s => {
+        s.b(); f16_to_f32(s);
+        s.u8(WASM_Opcode.f32_sqrt);
+        f32_to_f16(s)
+        s.wa()
+    },
 };
 
 function panic_if(s: Context) {
     return s.if().const(s.pc)._write_reg(Register.PC).const(420).const(s.pc).u8(WASM_Opcode.call).uvar(s.out_func).a().u8(WASM_Opcode.return).end()
+}
+
+
+const f16_bias = 16;
+const f16_exp_bits = 5;
+const f16_exp_max = (1 << f16_exp_bits) - 1;
+const f16_frac_bits = 10;
+const f16_frac_max = (1 << f16_frac_bits) - 1;
+const f16_max = 0x7FFF;
+
+const f32_bias = 127;
+const f32_exp_bits = 8;
+const f32_exp_max = (1 << f32_exp_bits) - 1;
+const f32_frac_bits = 23;
+const f32_frac_max = (1 << f32_frac_bits) - 1;
+
+function f16_to_f32(s: Context) {
+    s.sign_extend()
+    s.tee_local(Locals.Frac)
+
+    // get sign
+    .const(15)
+        .u8(WASM_Opcode.i32_shr_s)
+        .set_local(Locals.Sign)
+    // invert if sign
+    .get_local(Locals.Sign)
+        .get_local(Locals.Frac)
+        .u8(WASM_Opcode.i32_xor)
+        .set_local(Locals.Frac)
+    // get exponent
+    .get_local(Locals.Frac)
+        .const(f16_frac_bits)
+        .u8(WASM_Opcode.i32_shr_u)
+        .const(f16_exp_max)
+            .u8(WASM_Opcode.i32_and)
+        .const(f32_bias - f16_bias)
+            .u8(WASM_Opcode.i32_add)
+        .const(f32_frac_bits)
+            .u8(WASM_Opcode.i32_shl)
+        .set_local(Locals.Exp)
+    // get fraction
+    .get_local(Locals.Frac)
+        .const(f32_frac_bits - f16_frac_bits)
+            .u8(WASM_Opcode.i32_shl)
+        .const(f32_frac_max)
+            .u8(WASM_Opcode.i32_and)
+        .set_local(Locals.Frac)
+
+    // or everything together
+    .get_local(Locals.Frac)
+    .get_local(Locals.Exp)
+    .u8(WASM_Opcode.i32_or)
+    .get_local(Locals.Sign)
+        .const(31).u8(WASM_Opcode.i32_shl)
+    .u8(WASM_Opcode.i32_or)
+
+    // convert to f32
+    .u8(WASM_Opcode.f32_reinterpret_i32)
+}
+
+function f32_to_f16(s: Context) {
+    s.u8(WASM_Opcode.i32_reinterpret_f32)
+    .set_local(Locals.Frac)
+
+    s.block(WASM_Type.i32)
+    // get sign
+    s.get_local(Locals.Frac)
+        .const(31)
+        .u8(WASM_Opcode.i32_shr_s)
+        .set_local(Locals.Sign)
+    // get exponent
+    .get_local(Locals.Frac)
+        .const(f32_frac_bits)
+        .u8(WASM_Opcode.i32_shr_u)
+        .const(f32_exp_max)
+            .u8(WASM_Opcode.i32_and)
+        .const(f16_bias - f32_bias)
+            .u8(WASM_Opcode.i32_add)
+        .set_local(Locals.Exp)
+    // return max if exponent is too large
+    .get_local(Locals.Exp)
+        .const(f16_exp_max)
+        .u8(WASM_Opcode.i32_gt_s)
+        .if()
+            .const(f16_max)
+            .get_local(Locals.Sign)
+            .u8(WASM_Opcode.i32_xor)
+            .u8(WASM_Opcode.br).uvar(1)
+        .end()
+    // return 0 if exponent is too small
+    .get_local(Locals.Exp)
+        .const(0)
+        .u8(WASM_Opcode.i32_lt_s)
+        .if()
+            .const(0)
+            .u8(WASM_Opcode.br).uvar(1)
+        .end()
+     
+    // get fraction
+    .get_local(Locals.Frac)
+        .const(f32_frac_bits - f16_frac_bits)
+        .u8(WASM_Opcode.i32_shr_u)
+        .const(f16_frac_max)
+        .u8(WASM_Opcode.i32_and)
+        .set_local(Locals.Frac)
+
+    // or together exponent and fraction
+    .get_local(Locals.Frac)
+        .get_local(Locals.Exp)
+        .const(f16_frac_bits)
+            .u8(WASM_Opcode.i32_shl)
+        .u8(WASM_Opcode.i32_or)
+    // invert if signed
+    .get_local(Locals.Sign)
+        .u8(WASM_Opcode.i32_xor)
+    s.end()
 }
