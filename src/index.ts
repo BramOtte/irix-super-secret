@@ -548,12 +548,15 @@ function update_views(){
 
     //---- IRIS stuff
     register_save_stack.value = emulator.reg_save_stack.map((reg, i) => registers_to_string(reg, emulator._bits, i === 0)).join("\n");
-    data_stack.value = emulator.data_stack.join("\n");
-    call_stack.value = emulator.call_stack.map(v => {
+    data_stack.value = emulator.data_stack.subarray(0, emulator.dsp).join("\n");
+    call_stack.value = "";
+    for (let i = 0; i < emulator.csp; i++) {
+        const v = emulator.call_stack[i];
         const hex = `0x${v.toString(16).padStart(4, "0")}`;
         const line_num = emulator.debug_info.pc_line_nrs[v];
-        return line_num ? `${hex} ${line_num} | ${emulator.debug_info.lines[line_num-1].trim()}` : v;
-    }).join("\n");
+        const line = line_num ? `${hex} ${line_num} | ${emulator.debug_info.lines[line_num-1].trim()}` : v;
+        call_stack.value += line + "\n";
+    }
 }
 change_color_mode();
 
