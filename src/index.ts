@@ -23,6 +23,7 @@ import { register_count } from "./emulator/instructions.js";
 import { BufferView } from "./buffer_view/buffer_view.js";
 import { Iris_Display } from "./emulator/devices/iris/iris-display.js";
 import { urcl2c } from "./emulator/urcl2c.js";
+import { Run_Type } from "./emulator/wasm/urcl2wasm.js";
 
 let animation_frame: number | undefined;
 let running = false;
@@ -33,8 +34,9 @@ let clock_speed = 0;
 let clock_count = 0;
 
 const source_input = document.getElementById("urcl-source") as Editor_Window;
+source_input.profile_check.addEventListener("change", update_views);
 const output_element = document.getElementById("output") as HTMLOutputElement;
-const debug_output_element = document.getElementById("debug-output") as HTMLOutputElement;
+const debug_output_element = document.getElementById("debug-output") as HTMLElement;
 const memory_view = document.getElementById("memory-view") as BufferView;
 const register_view = document.getElementById("register-view") as HTMLElement;
 
@@ -58,8 +60,11 @@ const cout_check = document.getElementById("c-out-check") as HTMLInputElement;
 
 const memory_update_input = document.getElementById("update-mem-input") as HTMLInputElement;
 
-const JIT_box = document.getElementById("jit-box") as HTMLInputElement;
-const WASM_box = document.getElementById("wasm-box") as HTMLInputElement;
+const jit_radio_js = document.getElementById("jit-radio-js") as HTMLInputElement;
+const jit_radio_wasm = document.getElementById("jit-radio-wasm") as HTMLInputElement;
+const count_radio_jumps = document.getElementById("count-radio-jumps") as HTMLInputElement;
+const count_radio_none = document.getElementById("count-radio-none") as HTMLInputElement;
+
 
 
 // IRIS stuff
@@ -448,11 +453,15 @@ instruction-count: ${instruction_count} /256
 function frame(){
     if (running){
         try {
-            if (JIT_box.checked) {
-                if (WASM_box.checked) {
-                    emulator.jit_init_wasm();
+            if (jit_radio_js.checked) {  
+                emulator.jit_init();
+            } else  if (jit_radio_wasm.checked) {
+                if (count_radio_jumps.checked) {
+                    emulator.jit_init_wasm(Run_Type.Count_Jumps);
+                } else if (count_radio_none.checked) {
+                    emulator.jit_init_wasm(Run_Type.Uninterrupted);
                 } else {
-                    emulator.jit_init();
+                    emulator.jit_init_wasm(Run_Type.Count_Instrutions);
                 }
             } else {
                 emulator.jit_delete();
@@ -542,7 +551,7 @@ function update_views(){
     const lines = emulator.debug_info.pc_line_nrs
     const line = lines[Math.min(emulator.pc, lines.length-1)];
     source_input.set_pc_line(line);
-    source_input.set_line_profile(emulator.pc_counters.map((v, i) => [lines[i], v] as [number, number]));
+    source_input.set_line_profile(lines, emulator.pc_counters);
     console_output.flush();
     display.flush();
 

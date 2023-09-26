@@ -7,7 +7,7 @@ export class Editor_Window extends HTMLElement {
     private code: HTMLElement;
     private input: HTMLTextAreaElement;
     private colors: HTMLElement;
-    private profile_check: HTMLInputElement;
+    profile_check: HTMLInputElement;
     private profiled: boolean[] = [];
     private profile_present: boolean = false;
     private lines: string[] = [];
@@ -27,7 +27,7 @@ export class Editor_Window extends HTMLElement {
             ),
         );
 
-        this.input.addEventListener("input", this.input_cb.bind(this));
+        this.input.addEventListener("input", () => this.input_cb());
         
         this.input.addEventListener("keydown", this.keydown_cb.bind(this));
 
@@ -84,26 +84,35 @@ export class Editor_Window extends HTMLElement {
         }
         this.pc_line = line;
     }
-    public set_line_profile(counts: [number, number][]){
+    public set_line_profile(pc_to_line: ArrayLike<number>, counts: ArrayLike<number>){
+        const length = pc_to_line.length;
         if (!this.profile_check.checked){
             if (!this.profile_present){
                 return;
             }
             this.profile_present = false;
-        } 
+        } else {
+            this.profile_present = true;
+        }
         const children = this.line_nrs.children;
         let last = 0;
-        for (const [line_nr, executed] of counts){
-            for (; last < line_nr; last++){
-                if (this.profiled[last]){
-                    const child = children[line_nr];
+        if (this.profile_check.checked){
+            for (let pc = 0; pc < length; ++pc){
+                const executed = counts[pc];
+                const line_nr = pc_to_line[pc];
+                for (; last < line_nr; last++){
+                    const child = children[last];
                     child.textContent = `${last+1}`;
                 }
-            }
-            if (this.profile_check.checked){
+                last += 1;
                 const child = children[line_nr];
                 child.textContent = `${executed} ${line_nr+1}`;
             }
+        }
+            
+        for (; last < children.length; ++last) {
+            const child = children[last];
+            child.textContent = `${last+1}`;
         }
     }
     private keydown_cb(event: KeyboardEvent){

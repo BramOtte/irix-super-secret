@@ -1,4 +1,4 @@
-import { IntArray } from "./IEmu.js";
+import { UintArray } from "./IEmu.js";
 import {enum_count, object_map} from "./util.js";
 
 
@@ -126,6 +126,8 @@ export enum IO_Port {
     MOUSE_BUTTONS,
     FILE,
     DBG_INT,
+    
+    BENCHMARK,
 
     // Iris ports
     TILE,
@@ -156,10 +158,10 @@ export interface Instruction_Ctx {
     // ---- iris stuff
     csp: number;
     dsp: number;
-    call_stack: WordArray;
+    call_stack: UintArray;
     call_stack_cap: number;
 
-    data_stack: WordArray;
+    data_stack: UintArray;
     data_stack_cap: number;
     
     
@@ -314,7 +316,7 @@ export const Opcodes_operants: Record<Opcode, [Operant_Operation[], Instruction_
     [Opcode.__ASSERT0]: [[GET], (s) => {if (s.a) fail_assert(s, `value = ${s.a}`) }],
     [Opcode.__ASSERT_EQ]: [[GET, GET], (s) => {if (s.a !== s.b) fail_assert(s, `left = ${s.a}, right = ${s.b}`)}],
     [Opcode.__ASSERT_NEQ]: [[GET, GET], (s) => {if (s.a === s.b) fail_assert(s, `left = ${s.a}, right = ${s.b}`)}],
-
+    
     //----- Experimental Instructions
     [Opcode.UMLT]: [[SET, GET, GET], (s) => {s.a = (s.b * s.c) / (2 ** s._bits);}],
     [Opcode.SUMLT]: [[SET, GET, GET], (s) => {s.sa = Math.floor((s.sb * s.sc) / (2 ** s._bits));}],
