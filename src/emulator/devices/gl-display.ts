@@ -14,7 +14,7 @@ export class Gl_Display implements Device {
     // private gl_program: WebGLProgram;
     buffer: Uint32Array;
     private bytes: Uint8Array;
-    private buffer_enabled: 1 | 0 = 0;
+    buffer_enabled: 1 | 0 = 0;
     x = 0;
     y = 0;
     private pref_display?: HTMLElement | null = globalThis?.document?.getElementById?.("pref-display");
@@ -215,7 +215,7 @@ export class Gl_Display implements Device {
     dirty_display(){
         this.is_dirty = true;
     }
-    private is_dirty = true;
+    is_dirty = true;
 
     public update_display(){
         let {gl, width, height, bytes, uni_mode, color_mode, bits} = this;

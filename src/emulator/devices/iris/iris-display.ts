@@ -64,7 +64,9 @@ export class Iris_Display implements Device {
             1, 1, 1, 1,
         ])
 
-        fetch("src/emulator/devices/iris/iris-font.png").then(res => res.blob()).then(blob => {
+        const default_font = "src/emulator/devices/iris/iris-font.png";
+        // const default_font = "examples/iris/badapple.png";
+        fetch(default_font).then(res => res.blob()).then(blob => {
             this.load_font(blob);
         })
     }
@@ -158,6 +160,15 @@ export class Iris_Display implements Device {
         [IO_Port.X2]: (x: number) => {this.x2 = x;},
         [IO_Port.Y2]: (y: number) => {this.y2 = y;},
         [IO_Port.LINE]: this.line_out,
+        [IO_Port.TOGGLE_BUFFER]: (_: number) => {
+            if (this.display.buffer_enabled) {
+                this.display.buffer_enabled = 0;
+                this.display.is_dirty = true;
+            } else {
+                this.display.update_display();
+                this.display.buffer_enabled = 1;
+            }
+        }
     };
 
     inputs = {
