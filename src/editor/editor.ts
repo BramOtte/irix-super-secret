@@ -1,4 +1,4 @@
-import { pad_left } from "../emulator/util.js";
+import { pad_left, Warning } from "../emulator/util.js";
 import { l } from "../l.js";
 import { regex_end, Token, tokenize } from "./tokenizer.js";
 
@@ -50,6 +50,29 @@ export class Editor_Window extends HTMLElement {
 
         this.onscroll = () => this.render_lines();
     }
+
+    _errors: string[] = [];
+    set_errors(errors: Warning[]) {
+        this._errors.length = 0;
+        for (const error of errors) {
+            this._add_error(error.line_nr, error.message);
+        }
+        this.render_lines();
+    }
+
+    add_error(line_nr: number, msg: string) {
+        this._add_error(line_nr, msg);
+        this.render_lines();
+    } 
+
+    private _add_error(line_nr: number, message: string) {
+        if (this._errors[line_nr]) {
+            this._errors[line_nr] += "; " + message;
+        } else {
+            this._errors[line_nr] = "\t" + message;
+        } 
+    }
+
     get saved() {
         return this.saved_marker.value == "saved";
     }
@@ -193,9 +216,6 @@ export class Editor_Window extends HTMLElement {
         this.input.style.height = "0px";
         const height = this.input.scrollHeight
         this.input.style.height = height + "px";
-
-        this.input.style.width = "0px";
-        this.input.style.width = this.input.scrollWidth + "px";
         
         const lines = this.input.value.split("\n");
         this.lines = lines;
@@ -251,6 +271,18 @@ export class Editor_Window extends HTMLElement {
 
                     span = span.nextElementSibling;
                 }
+                {
+                    const error_mesage = this._errors[i];
+                    if (span === null){
+                        span = document.createElement("span");
+                        div.appendChild(span);
+                    }
+                    span.textContent = error_mesage;
+                    span.className = "error-text";
+
+                    span = span.nextElementSibling;
+
+                }
             }
 
             while (span !== null){
@@ -266,6 +298,10 @@ export class Editor_Window extends HTMLElement {
             this.colors.removeChild(div);
             div = next;
         }
+
+
+        this.input.style.width = "0px";
+        this.input.style.width = this.code.scrollWidth + "px";
     }
 
     private call_input_listeners(){

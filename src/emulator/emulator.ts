@@ -10,8 +10,8 @@ export { Step_Result } from "./IEmu.js"
 type WordArray = UintArray;
 
 interface Emu_Options {
-    error?: (a: string) => never;
-    warn?: (a: string) => void;
+    error?: (a: string, linenr: undefined | number, file: undefined | string) => never;
+    warn?: (a: string, linenr: undefined | number, file: undefined | string) => void;
     on_continue?: ()=>void;
     max_memory?: ()=>number;
 }
@@ -582,11 +582,11 @@ step(): Step_Result {
     error(msg: string): never {
         const {pc_line_nrs, lines, file_name} = this.debug_info;
         const line_nr = pc_line_nrs[this.pc-1];
-        const trace = this.decode_memory(this.stack_ptr, this.memory.length, false);
-        const content = `${file_name??"eval"}:${line_nr + 1} - ERROR - ${msg}\n    ${lines[line_nr]}\n\n${indent(registers_to_string(this.registers, this._bits, true), 1)}\n\nstack trace:\n${trace}`;
         if (this.options.error){
-            this.options.error(content)
+            this.options.error(msg, line_nr, file_name)
         }
+        const trace = this.decode_memory(this.stack_ptr, this.memory.length, false);
+        const content = `${file_name??"eval"}:${line_nr + 1} - ERROR - ${msg}\n    ${lines[line_nr]}\n\n${indent(registers_to_string(this), 1)}\n\nstack trace:\n${trace}`;
         throw Error(content);
     }
     get_line_nr(pc = this.pc): number {
@@ -604,11 +604,10 @@ step(): Step_Result {
     }
 
     warn(msg: string): void {
-        const content =  this.format_message(`warning - ${msg}`);
         if (this.options.warn){
-            this.options.warn(content);
+            this.options.warn(msg, this.get_line_nr(), this.debug_info.file_name);
         } else {
-            console.warn(content);
+            console.warn(this.format_message(`warning - ${msg}`));
         }
     }
     debug(msg: string): void {

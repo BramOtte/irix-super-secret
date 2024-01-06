@@ -36,7 +36,7 @@ enum Label_Type {
 }
 
 interface Label {
-    type: Label_Type, index: i53
+    type: Label_Type, index: i53, prev?: Label
 }
 
 interface Header_Value {
@@ -101,6 +101,7 @@ export function parse(source: string, options: Parse_Options = {}): Parser_outpu
         out.headers[i as URCL_Header] = {value: urcl_headers[i as URCL_Header].def};
         out.headers[i as URCL_Header].operant = urcl_headers[i as URCL_Header].def_operant;
     }
+    let label_line_nr = 0;
     let label: undefined | Label;
     let last_label: undefined | Label;
     let labeled = Labeled.None as Labeled;
@@ -110,11 +111,15 @@ export function parse(source: string, options: Parse_Options = {}): Parser_outpu
         const line = out.lines[line_nr];
         if (line === ""){continue;};
         last_label = label;
-        if (label = parse_label(line, line_nr, inst_i, out, out.warnings)){continue;}
+        if (label = parse_label(line, line_nr, inst_i, out, out.warnings)){
+            label.prev = last_label;
+            label_line_nr = line_nr;
+            continue;
+        }
         if (parse_header(line, line_nr, out.headers, out.warnings)){continue;}
         if (split_instruction(line, line_nr, inst_i, out, out.errors)){
             if (last_label && labeled === Labeled.DW){
-                // out.warnings.push(warn(line_nr, `Label at data->instruction boundary`));
+                out.warnings.push(warn(label_line_nr, `Label at boundary, add DW after or instruction before it`));
             }
             labeled = Labeled.INST;
             inst_i++; continue;
@@ -156,8 +161,10 @@ export function parse(source: string, options: Parse_Options = {}): Parser_outpu
                 if (labeled === Labeled.INST){
                     // out.warnings.push(warn(line_nr, `Label at instruction->data boundary`));
                 }
-                last_label.type = Label_Type.DW;
-                last_label.index = out.data.length;
+                for (let label: undefined | Label = last_label; label; label = label.prev) {
+                    label.type = Label_Type.DW;
+                    label.index = out.data.length;                    
+                }
             }
             labeled = Labeled.DW;
             let i = 0;
@@ -408,7 +415,9 @@ function parse_instructions(line_nr: number, inst_i: number, out: Parser_output,
         const [type, value] = parse_operant(()=>strings[i++], line_nr, inst_i, out.labels, out.constants, out, errors, warnings) ?? [];
         if (type === Operant_Type.String){
             errors.push(warn(line_nr, "Strings are not allowed in instructions"));
-        } else if (type !== undefined){
+        } else if (type === Operant_Type.NoInit) {
+            errors.push(warn(line_nr, "'*' are not allowed in instructions"));
+        } if (type !== undefined){
             types.push(type);
             values.push(value as number);
         }
@@ -542,6 +551,9 @@ function parse_operant(
             // code = real_code ?? code;
 
             return [Operant_Type.Imm, code];
+        }
+        case '*': {
+            return [Operant_Type.NoInit, 0xCDCDCDCD];
         }
         case '"': {
             let i = 1;
