@@ -129,6 +129,7 @@ export enum IO_Port {
     DBG_INT,
     
     BENCHMARK,
+    TIME,
 
     // Iris ports
     TILE,
