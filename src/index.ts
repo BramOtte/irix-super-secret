@@ -209,6 +209,15 @@ function change_color_mode(){
     display.color_mode = color_mode ?? display.color_mode;
     display.update_display();
 }
+
+const do_bin_to_color_input = document.getElementById("do_bin_to_color") as HTMLInputElement;
+do_bin_to_color_input.addEventListener("change", change_do_bin_to_color);
+function change_do_bin_to_color() {
+    display.do_bin_to_color = do_bin_to_color_input.checked;
+    display.update_display();
+}
+change_do_bin_to_color();
+
 const width_input = document.getElementById("display-width") as HTMLInputElement;
 const height_input = document.getElementById("display-height") as HTMLInputElement;
 const fullscreen_button = document.getElementById("display-fullscreen") as HTMLButtonElement;

@@ -11,6 +11,11 @@ export class Gl_Display implements Device {
     private gl_indices: WebGLBuffer;
     private gl_texture: WebGLTexture;
     private uni_mode: WebGLUniformLocation;
+    private uni_resolution: WebGLUniformLocation;
+    private uni_u_do_bin_to_color: WebGLUniformLocation;
+
+    public do_bin_to_color = true;
+
     // private gl_program: WebGLProgram;
     buffer: Uint32Array;
     private bytes: Uint8Array;
@@ -76,6 +81,20 @@ export class Gl_Display implements Device {
             throw new Error("program does not have uniform u_color_mode");
         }
         this.uni_mode = uni_mode;
+
+        const uni_resolution = gl.getUniformLocation(gl_program, "u_resolution");
+        if (uni_resolution === null){
+            throw new Error("program does not have uniform u_resolution");
+        }
+        this.uni_resolution = uni_resolution;
+
+
+        const uni_do_bin_to_color = gl.getUniformLocation(gl_program, "u_do_bin_to_color");
+        if (uni_do_bin_to_color === null){
+            throw new Error("program does not have uniform u_do_bin_to_color");
+        }
+        this.uni_u_do_bin_to_color = uni_do_bin_to_color;
+
 
         gl.enableVertexAttribArray(attr_pos);
         gl.enableVertexAttribArray(attr_uv);
@@ -210,6 +229,7 @@ export class Gl_Display implements Device {
             -1,  1,       0, 0,
         ]), gl.STATIC_DRAW);
         gl.viewport(0, 0, width, height);
+        gl.uniform2f(this.uni_resolution, width, height);
     }
 
     dirty_display(){
@@ -228,7 +248,8 @@ export class Gl_Display implements Device {
                 color_mode = Color_Mode.RGB8;
             }
         }
-        gl.uniform1ui(uni_mode, color_mode)
+        gl.uniform1ui(this.uni_u_do_bin_to_color, this.do_bin_to_color && this.color_mode != Color_Mode.Bin ? 1 : 0);
+        gl.uniform1ui(uni_mode, color_mode);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, bytes);
         gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
         this.is_dirty = false;

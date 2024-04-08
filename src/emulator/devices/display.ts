@@ -5,7 +5,8 @@ export enum Color_Mode {
     RGB, Mono, Bin,
     RGB8, RGB16, RGB24,
     RGB6, RGB12,
-    PICO8, RGBI
+    PICO8, RGBI,
+    Mono4,
 }
 
 export const pico8: [number, number, number][] = [

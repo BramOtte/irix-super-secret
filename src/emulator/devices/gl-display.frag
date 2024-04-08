@@ -5,6 +5,8 @@ out vec4 color;
 
 uniform sampler2D u_image;
 uniform uint u_color_mode;
+uniform vec2 u_resolution;
+uniform bool u_do_bin_to_color;
 
 vec4 rgb(vec4 v, uint bits){
     uint color = uint(v.x * 255.) + (uint(v.y * 255.) << 8u) + (uint(v.z * 255.) << 16u);
@@ -60,7 +62,19 @@ vec4 bin(vec4 c){
 
 
 void main(){
-    vec4 c = texture(u_image, v_uv);
+    vec4 c;
+    if (u_do_bin_to_color) {
+        ivec2 uv = ivec2(floor(v_uv * (u_resolution / 2.)) * 2.);
+        c = 
+            ((texelFetch(u_image, uv + ivec2(0, 0), 0).x > 0.) ? vec4(1./255.) : vec4(0.)) +
+            ((texelFetch(u_image, uv + ivec2(1, 0), 0).x > 0.) ? vec4(2./255.) : vec4(0.)) +
+            ((texelFetch(u_image, uv + ivec2(0, 1), 0).x > 0.) ? vec4(4./255.) : vec4(0.)) +
+            ((texelFetch(u_image, uv + ivec2(1, 1), 0).x > 0.) ? vec4(8./255.) : vec4(0.))
+        ;
+    } else {
+        c = texture(u_image, v_uv);
+    }
+
     switch (u_color_mode){
         case 0u: color = rgb(c, 8u); break;
         case 1u: color = mono(c); break;
@@ -72,6 +86,7 @@ void main(){
         case 7u: color = rgb(c, 12u); break;
         case 8u: color = pico8(c); break;
         case 9u: color = rgbi(c); break;
-        default: color = pico8(c); break;
+        case 10u: color = mono(c * 16.); break;
+        default: color = bin(c); break;
     }
 }
