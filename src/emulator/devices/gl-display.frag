@@ -66,10 +66,10 @@ void main(){
     if (u_do_bin_to_color) {
         ivec2 uv = ivec2(floor(v_uv * (u_resolution / 2.)) * 2.);
         c = 
-            ((texelFetch(u_image, uv + ivec2(0, 0), 0).x > 0.) ? vec4(1./255.) : vec4(0.)) +
-            ((texelFetch(u_image, uv + ivec2(1, 0), 0).x > 0.) ? vec4(2./255.) : vec4(0.)) +
-            ((texelFetch(u_image, uv + ivec2(0, 1), 0).x > 0.) ? vec4(4./255.) : vec4(0.)) +
-            ((texelFetch(u_image, uv + ivec2(1, 1), 0).x > 0.) ? vec4(8./255.) : vec4(0.))
+            ((texelFetch(u_image, uv + ivec2(0, 0), 0).x > 0.) ? vec4(8./255.) : vec4(0.)) +
+            ((texelFetch(u_image, uv + ivec2(1, 0), 0).x > 0.) ? vec4(4./255.) : vec4(0.)) +
+            ((texelFetch(u_image, uv + ivec2(0, 1), 0).x > 0.) ? vec4(2./255.) : vec4(0.)) +
+            ((texelFetch(u_image, uv + ivec2(1, 1), 0).x > 0.) ? vec4(1./255.) : vec4(0.))
         ;
     } else {
         c = texture(u_image, v_uv);
