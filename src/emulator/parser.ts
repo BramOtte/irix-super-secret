@@ -1,4 +1,5 @@
 import { Break, BreakFlag, break_flag } from "./breaks.js";
+import { derive_constants_from_headers } from "./compiler.js";
 import { Constants, Header_Operant, IO_Port as IO_Port, Opcode, Opcodes_operant_lengths as Opcodes_operant_counts, Operant_Prim, Operant_Type, Register, register_count, URCL_Header, urcl_headers } from "./instructions.js";
 import { enum_count, enum_from_str, enum_strings, f16_encode, f32_encode, i53, is_digit, warn, Warning, Word } from "./util.js";
 
@@ -91,6 +92,8 @@ enum Labeled {
 
 export function parse(source: string, options: Parse_Options = {}): Parser_output
 {
+    let did_parse_headers = false;
+
     const out = new Parser_output();
     Object.assign(out.constants, options.constants ?? {});
     out.lines = source.split('\n').map(line =>
@@ -110,13 +113,31 @@ export function parse(source: string, options: Parse_Options = {}): Parser_outpu
         inst_is.push(inst_i);
         const line = out.lines[line_nr];
         if (line === ""){continue;};
+        
+        if (parse_header(line, line_nr, out.headers, out.warnings)){
+            if (did_parse_headers) {
+                out.errors.push(warn(line_nr, "Headers must be at the start of the program"));
+            }
+            continue;
+        } else {
+            // this should only run for actual code but right now runs simply if there is anything thats not header, comment or whitespace
+            const constants = derive_constants_from_headers(out.headers);
+            for (const [key, value] of Object.entries(constants)) {
+                const str = ""+ value
+                out.constants[key] = str;
+                out.constants[key.toUpperCase()] = str;
+            }
+
+            did_parse_headers = true;
+        }
+
         last_label = label;
         if (label = parse_label(line, line_nr, inst_i, out, out.warnings)){
             label.prev = last_label;
             label_line_nr = line_nr;
             continue;
         }
-        if (parse_header(line, line_nr, out.headers, out.warnings)){continue;}
+
         if (split_instruction(line, line_nr, inst_i, out, out.errors)){
             if (last_label && labeled === Labeled.DW){
                 out.warnings.push(warn(label_line_nr, `Label at boundary, add DW after or instruction before it`));
@@ -141,7 +162,7 @@ export function parse(source: string, options: Parse_Options = {}): Parser_outpu
             if (macro.toLowerCase() === "@debug") {
                 continue;
             }
-            out.warnings.push(warn(line_nr, `Unknown marco ${macro}`));
+            out.warnings.push(warn(line_nr, `Unknown macro ${macro}`));
             continue
         }
         // TODO: make DW and RW have separate memory pools
@@ -534,54 +555,47 @@ function parse_operant(
             return [Operant_Type.Imm, port];
         }
         case '\'': {
-            let char_lit;
-            if (operant.length === 1){
-                operant += " " + get_operant() ?? "";
+            if (operant.length < 2 || operant.at(-1) !== '\''){
+                errors.push(warn(line_nr, `Missing end of char`));
+                return [Operant_Type.Imm, 0];
             }
+            
+            let char_lit;
             try {
                 char_lit = JSON.parse(operant.replace(/"/g, "\\\"").replace(/'/g, '"')) as string;
             } catch (e) {
                 errors.push(warn(line_nr, `Invalid character ${operant}\n  ${e}`));
                 return undefined;
             }
-            let code = char_lit.codePointAt(0) ?? 0;
-            // const real_code = font?.get(code);
-            // // console.log(char_lit, code, real_code);
-            // code = real_code ?? code;
 
-            return [Operant_Type.Imm, code];
+            if (char_lit.length != 1) {
+                warnings.push(warn(line_nr, `Character literal should only contain one character but contains ${char_lit.length}`));
+            }
+
+            return [Operant_Type.Imm, char_lit.codePointAt(0) ?? char_lit.charCodeAt(0)];
         }
         case '_': {
             return [Operant_Type.NoInit, 0xCDCDCDCD];
         }
         case '"': {
-            let i = 1;
             const value = data.length;
-            while (true){
-                i = operant.indexOf('"', 1);
-                if (i > 0 && operant[i-1] !== "\\" || operant[i-2] === "\\"){
-                    let string = "";
-                    try {
-                        string = JSON.parse(operant) as string;
-                    } catch (e) {
-                        errors.push(warn(line_nr, `Invalid string ${operant}\n  ${e}`));
-                        return undefined;
-                    }
-                    for (let i = 0; i < string.length; i++){
-                        let code = string.codePointAt(i) ?? 0;
-                        // const real_code = font?.get(code);
-                        // code = real_code ?? code;
-                        data.push(code);
-                    }
-                    return [Operant_Type.String, value];
-                }
-                const next = get_operant();
-                if (next === undefined){
-                    errors.push(warn(line_nr, `missing end of string`));
-                    return [Operant_Type.String, value];
-                }
-                operant += " " + next; 
+
+            if (operant.length < 2 || operant.at(-1) !== '"'){
+                errors.push(warn(line_nr, `missing end of string ${operant}`));
+                return [Operant_Type.String, value];
             }
+            
+            let string = "";
+            try {
+                string = JSON.parse(operant) as string;
+            } catch (e) {
+                errors.push(warn(line_nr, `Invalid string ${operant}\n  ${e}`));
+                return undefined;
+            }
+            for (let i = 0; i < string.length; i++){
+                data.push(string.codePointAt(i) ?? 0);
+            }
+            return [Operant_Type.String, value];
         }
         case '&': warnings.push(warn(line_nr, `Compiler constants with & are deprecated`));
         case '@': {
@@ -628,6 +642,9 @@ const string_quote = '"'.charCodeAt(0);
 const char_quote = '\''.charCodeAt(0);
 const backslash = '\\'.charCodeAt(0);
 const comma = ','.charCodeAt(0);
+const square_open = '['.charCodeAt(0);
+const square_close = ']'.charCodeAt(0);
+
 
 function is_white(x: number) {
     return x <= space || x === comma;
@@ -636,26 +653,34 @@ function is_white(x: number) {
 
 function split_words(line: string): string[] {
     const out: string[] = [];
-    for (let i = 0; i < line.length; i += 1) {
+    for (let i = 0; i < line.length;) {
         for (; i < line.length && is_white(line.charCodeAt(i)); i += 1);
         const start = i;
         const first_char = line.charCodeAt(i);
         i += 1;
-        if (first_char === string_quote || first_char === char_quote ) {
-            for (; i < line.length; i += 1) {
-                const c = line.charCodeAt(i);
-                if (c == backslash) {
-                    i += 1;
-                    continue;
+        switch (first_char) {
+            case string_quote: case char_quote: {
+                for (; i < line.length; i += 1) {
+                    const c = line.charCodeAt(i);
+                    if (c === backslash) {
+                        i += 1;
+                        continue;
+                    }
+                    if (c === first_char) {
+                        i += 1;
+                        break;
+                    }
                 }
-                if (c === first_char) {
-                    i += 1;
-                    break;
-                }
-            }
-        }
 
-        for (; i < line.length && !is_white(line.charCodeAt(i)); i += 1);
+                for (; i < line.length && !is_white(line.charCodeAt(i)); i += 1);
+            } break;
+
+            case square_open: case square_close: break;
+            
+            default: {
+                for (; i < line.length && !is_white(line.charCodeAt(i)); i += 1);
+            } break;
+        }
 
         out.push(line.substring(start, i));
     }
