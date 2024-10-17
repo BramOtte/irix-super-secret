@@ -135,6 +135,7 @@ export enum IO_Port {
     TILE,
     X1, Y1, X2, Y2, LINE,
     TOGGLE_BUFFER,
+    FAIL_ASSERT,
 }
 
 export interface Instruction_Ctx {
