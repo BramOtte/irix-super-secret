@@ -123,7 +123,7 @@ export function create_urcl_memory(program: Program): URCL_Memory {
     };
 }
 
-export function urcl2wasm(program: Program, memory: URCL_Memory, run_type: Run_Type, debug?: Debug_Info): Uint8Array {
+export function urcl2wasm(program: Program, memory: URCL_Memory, run_type: Run_Type = Run_Type.Count_Instrutions, debug?: Debug_Info): Uint8Array {
     const s = new Context(memory, run_type, program, debug);
     s.bytes(magic).u32(version)
         .u8(Section_Type.type)

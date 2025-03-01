@@ -410,7 +410,22 @@ function split_instruction
 (line: string, line_nr: number, inst_i: number, out: Instruction_Out, errors: Warning[]): boolean
 {
     const [opcode_str, ...ops] = split_words(line);
-    const opcode = enum_from_str(Opcode, opcode_str.toUpperCase().replace("@", "__"));
+    let upper = opcode_str.toUpperCase().replace("@", "__");
+
+    if (upper === "OUT%") {
+        upper = "OUT";
+    }
+    
+    if (upper === "IN%") {
+        upper = "IN";
+        if (ops.length >= 2) {
+            const tmp = ops[0];
+            ops[0] = ops[1];
+            ops[1] = tmp;
+        } 
+    }
+
+    const opcode = enum_from_str(Opcode, upper);
     if (opcode === undefined){
         return false;
     }
@@ -559,17 +574,17 @@ function parse_operant(
                 errors.push(warn(line_nr, `Missing end of char`));
                 return [Operant_Type.Imm, 0];
             }
-            
-            let char_lit;
-            try {
-                char_lit = JSON.parse(operant.replace(/"/g, "\\\"").replace(/'/g, '"')) as string;
-            } catch (e) {
-                errors.push(warn(line_nr, `Invalid character ${operant}\n  ${e}`));
-                return undefined;
+            if (operant.length < 3) {
+                errors.push(warn(line_nr, `Empty char litteral`));
+                return [Operant_Type.Imm, 0];    
             }
-
-            if (char_lit.length != 1) {
-                warnings.push(warn(line_nr, `Character literal should only contain one character but contains ${char_lit.length}`));
+            
+            let [char_lit, i] = escape_char(operant.substring(1, operant.length-1), 0);
+            if (i === undefined) {
+                if (char_lit) {
+                    errors.push(warn(line_nr, char_lit));
+                }
+                return undefined;
             }
 
             return [Operant_Type.Imm, char_lit.codePointAt(0) ?? char_lit.charCodeAt(0)];
@@ -584,16 +599,18 @@ function parse_operant(
                 errors.push(warn(line_nr, `missing end of string ${operant}`));
                 return [Operant_Type.String, value];
             }
+            const text = operant.substring(1, operant.length-1);
             
-            let string = "";
-            try {
-                string = JSON.parse(operant) as string;
-            } catch (e) {
-                errors.push(warn(line_nr, `Invalid string ${operant}\n  ${e}`));
-                return undefined;
-            }
-            for (let i = 0; i < string.length; i++){
-                data.push(string.codePointAt(i) ?? 0);
+            for (let i = 0; i < text.length; ) {
+                const [c, j] = escape_char(text, i);
+                if (j === undefined) {
+                    if (c) {
+                        errors.push(warn(line_nr, c));
+                    }
+                    break;
+                }
+                i = j;
+                data.push(c.codePointAt(0) ?? 0);
             }
             return [Operant_Type.String, value];
         }
@@ -631,6 +648,54 @@ function parse_operant(
     }
 }
 
+function escape_char(text: string, i: number): [string, number | undefined] {
+    if (i >= text.length) {
+        return ["", undefined]
+    }
+    if (text[i] === '\\') { switch (text[i+1]) {
+        case '"': return ['"', i+2];
+        case '\'': return ['\'', i+2];
+        case '\/': return ['/', i+2];
+        case '\\': return ['\\', i+2];
+        case 'b': return ['\b', i+2];
+        case 'f': return ['\f', i+2];
+        case 'n': return ['\n', i+2];
+        case 'r': return ['\r', i+2];
+        case 't': return ['\t', i+2];
+        case 'v': return ['\v', i+2];
+        case '0': return ['\0', i+2];
+        case 'U': {
+            const end = i + 10;
+            if (end >= text.length) {
+                return ["expected 8 hex digits after \\U escape sequence", undefined];
+            }
+            const code = Number.parseInt(text.substring(i+2, end), 16);
+            return [String.fromCodePoint(code), end];
+        };
+        case 'u': {
+            const end = i + 6;
+            if (end >= text.length) {
+                return ["expected 4 hex digits after \\u escape sequence", undefined];
+            }
+            const code = Number.parseInt(text.substring(i+2, end), 16);
+            return [String.fromCharCode(code), end];
+        };
+        case 'x': {
+            const end = i + 4;
+            if (end >= text.length) {
+                return ["expected 2 hex digits after \\x escape sequence", undefined];
+            }
+            const code = Number.parseInt(text.substring(i+2, end), 16);
+            return [String.fromCharCode(code), end];
+        };
+        default: {
+            return [`Unexpected escape sequence \\${text[i+1]}`, undefined];
+        }
+    }}
+
+    return [text[i], i+1];
+}
+
 function str_until(string: string, sub_string: string){
     const end = string.indexOf(sub_string);
     if (end < 0){return string;}
@@ -644,7 +709,7 @@ const backslash = '\\'.charCodeAt(0);
 const comma = ','.charCodeAt(0);
 const square_open = '['.charCodeAt(0);
 const square_close = ']'.charCodeAt(0);
-
+const percent = '%'.charCodeAt(0);
 
 function is_white(x: number) {
     return x <= space || x === comma;
@@ -678,11 +743,11 @@ function split_words(line: string): string[] {
             case square_open: case square_close: break;
             
             default: {
-                for (; i < line.length && !is_white(line.charCodeAt(i)); i += 1);
+                for (; i < line.length && !is_white(line.charCodeAt(i)) && line.charCodeAt(i) !== percent; i += 1);
             } break;
         }
 
-        out.push(line.substring(start, i));
+        out.push(line.substring(start, i + Number(line.charCodeAt(i) === percent)));
     }
 
     if (out.length == 0) {
