@@ -7,7 +7,7 @@ import { Step_Result, IntArray, Run, Step, UintArray } from "./IEmu.js";
 import { Run_Type, URCL_Memory, WASM_Exports, WASM_Imports, create_urcl_memory, urcl2wasm } from "./wasm/urcl2wasm.js";
 export { Step_Result } from "./IEmu.js"
 
-type WordArray = UintArray;
+export type WordArray = UintArray;
 
 interface Emu_Options {
     error?: (a: string, linenr: undefined | number, file: undefined | string) => never;

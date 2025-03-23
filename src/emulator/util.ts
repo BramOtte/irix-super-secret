@@ -1,4 +1,4 @@
-import { Emulator } from "./emulator.js";
+import { Emulator, WordArray } from "./emulator.js";
 import { Register, register_count } from "./instructions.js";
 
 export type i53 = number;
@@ -41,7 +41,12 @@ export function hex(num: number, size: number, pad=" "){
 export function hex_size(bits: number){
     return Math.ceil(bits / 4);
 }
-export function registers_to_string(registers: WordArray, bits: number, do_headers = true) {
+
+export function registers_to_string(emu: Emulator) {
+    return registers_to_string_(emu.registers, emu._bits);
+}
+
+export function registers_to_string_(registers: WordArray, bits: number, do_headers = true) {
     const nibbles = hex_size(bits);
     return (
             !do_headers ? "" : Array.from({ length: register_count }, (_,i) => pad_center(Register[i], nibbles) + " ").join("") +

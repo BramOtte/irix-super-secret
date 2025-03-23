@@ -17,7 +17,7 @@ import { Sound } from "./emulator/devices/sound.js";
 import { Storage } from "./emulator/devices/storage.js";
 import { Emulator, Step_Result } from "./emulator/emulator.js";
 import { parse } from "./emulator/parser.js";
-import { Arr, enum_from_str, enum_strings, expand_warning, registers_to_string, memoryToString, format_int } from "./emulator/util.js";
+import { Arr, enum_from_str, enum_strings, expand_warning, registers_to_string, memoryToString, format_int, registers_to_string_ } from "./emulator/util.js";
 import { Scroll_Out } from "./scroll-out/scroll-out.js";
 import { register_count } from "./emulator/instructions.js";
 import { BufferView } from "./buffer_view/buffer_view.js";
@@ -194,12 +194,7 @@ console_copy.addEventListener("click", e => {
 
 
 const canvas = document.getElementsByTagName("canvas")[0];
-let ctx: CanvasRenderingContext2D | WebGL2RenderingContext | null = canvas.getContext("webgl2");
-
-if (!ctx) {
-    console.warn("Unable to get webgl2 rendering context, falling back to 2d context");
-    ctx = canvas.getContext("2d");
-}
+let ctx = canvas.getContext("webgl2");
 
 if (!ctx) {
     throw new Error("Unable to get rendering context");
@@ -208,7 +203,7 @@ if (!ctx) {
 canvas.width = width || 32;
 canvas.height = height || 32;
 
-const display = ctx instanceof CanvasRenderingContext2D ? new Display(ctx, 32, color) : new Gl_Display(ctx, color);
+const display = new Gl_Display(ctx, color);
 const color_mode_input = document.getElementById("color-mode") as HTMLOptionElement;
 if (color !== undefined) color_mode_input.value = Color_Mode[color];
 color_mode_input.addEventListener("change", change_color_mode);
@@ -308,7 +303,7 @@ emulator.add_io_device(new Mouse(canvas));
 source_input.oninput = oninput;
 auto_run_input.onchange = oninput;
 
-let save_timeout: undefined | number;
+let save_timeout: undefined | NodeJS.Timeout;
 let save_timeout_time = 5000;
 
 
@@ -574,7 +569,7 @@ function update_views(){
         memory_view.update();
     }
     register_view.innerText = 
-        registers_to_string(emulator.registers, emulator._bits)
+        registers_to_string(emulator)
     const lines = emulator.debug_info.pc_line_nrs
     const line = lines[Math.min(emulator.pc, lines.length-1)];
     source_input.set_pc_line(line);
@@ -583,7 +578,7 @@ function update_views(){
     display.flush();
 
     //---- IRIS stuff
-    register_save_stack.value = emulator.reg_save_stack.map((reg, i) => registers_to_string(reg, emulator._bits, i === 0)).join("\n");
+    register_save_stack.value = emulator.reg_save_stack.map((reg, i) => registers_to_string_(reg, emulator._bits, i === 0)).join("\n");
     data_stack.value = emulator.data_stack.subarray(0, emulator.dsp).join("\n");
     call_stack.value = "";
     for (let i = 0; i < emulator.csp; i++) {

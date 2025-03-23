@@ -89,15 +89,15 @@ const curcl_inst: {[K in Opcode]: (s: Context) => string} = {
             case IO_Port.TEXT: return `printf("%c", ${s.b});`;
             case IO_Port.NUMB: return `printf("%${s.fint}", ${s.b});`;
         }
-        console.error("unsupported output port", s.a)
+        console.error("unsupported output port", s.a);
         return `printf("unsupported port ${s.a}")`;
     },
     [Opcode.IN]: s => {
         switch (parseInt(s.a)) {
             case IO_Port.TEXT: return `scanf("%c", &${s.b})`;
         }
-        console.error("unsupported input port", s.a)
-        return ``
+        console.error("unsupported input port", s.a);
+        return ``;
     },
     [Opcode.BSL]: s => `${s.a} = ${s.b} << ${s.c};`,
     [Opcode.SDIV]: s => `${s.a} = ${s.sb} / ${s.sc};`,
@@ -106,7 +106,49 @@ const curcl_inst: {[K in Opcode]: (s: Context) => string} = {
     [Opcode.__ASSERT_EQ]: s => `if (${s.a} != ${s.b}) {printf(__FILE__ ":%d: Assertion failed ${s.a}(%d) != ${s.b}(%d)", __LINE__, ${s.a}, ${s.b}); goto l_error;}`,
     [Opcode.__ASSERT_NEQ]: s => `if (${s.a} == ${s.b}) {printf(__FILE__ ":%d: Assertion failed ${s.a}(%d) == ${s.b}(%d)", __LINE__, ${s.a}, ${s.b}); goto l_error;}`,
     [Opcode.UMLT]: s => `${s.a} = ((unsigned ${s.large_int})${s.b} * (unsigned ${s.large_int})${s.c}) >> ${s.bits}UL;`,
-    [Opcode.SUMLT]: s => `${s.a} = ((${s.large_int})${s.sb} * (${s.large_int})${s.sc}) >> ${s.bits}L;`
+    [Opcode.SUMLT]: s => `${s.a} = ((${s.large_int})${s.sb} * (${s.large_int})${s.sc}) >> ${s.bits}L;`,
+    [Opcode.HCAL]: function (s: Context): string {
+        throw new Error("Function not implemented.");
+    },
+    [Opcode.HRET]: function (s: Context): string {
+        throw new Error("Function not implemented.");
+    },
+    [Opcode.HSAV]: function (s: Context): string {
+        throw new Error("Function not implemented.");
+    },
+    [Opcode.HRSR]: function (s: Context): string {
+        throw new Error("Function not implemented.");
+    },
+    [Opcode.HPSH]: function (s: Context): string {
+        throw new Error("Function not implemented.");
+    },
+    [Opcode.HPOP]: function (s: Context): string {
+        throw new Error("Function not implemented.");
+    },
+    [Opcode.FTOI]: function (s: Context): string {
+        throw new Error("Function not implemented.");
+    },
+    [Opcode.ITOF]: function (s: Context): string {
+        throw new Error("Function not implemented.");
+    },
+    [Opcode.FMLT]: function (s: Context): string {
+        throw new Error("Function not implemented.");
+    },
+    [Opcode.FDIV]: function (s: Context): string {
+        throw new Error("Function not implemented.");
+    },
+    [Opcode.FADD]: function (s: Context): string {
+        throw new Error("Function not implemented.");
+    },
+    [Opcode.FSUB]: function (s: Context): string {
+        throw new Error("Function not implemented.");
+    },
+    [Opcode.FABS]: function (s: Context): string {
+        throw new Error("Function not implemented.");
+    },
+    [Opcode.FSQRT]: function (s: Context): string {
+        throw new Error("Function not implemented.");
+    }
 };
 
 function reg_string(reg_num: number): string {
