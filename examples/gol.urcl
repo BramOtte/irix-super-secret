@@ -1,0 +1,151 @@
+BITS 16
+
+// Any live cell with fewer than two live neighbours dies, as if by underpopulation.
+// Any live cell with two or three live neighbours lives on to the next generation.
+// Any live cell with more than three live neighbours dies, as if by overpopulation.
+// Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+
+@define i1 r21
+@define i2 r22
+
+@define v1 r1
+@define v2 r2
+@define v3 r3
+
+@define cell r4
+
+@define x r10
+@define carry r11
+
+.state
+DW [ 0x0001 0x1000 ]
+DW [ 0x0000 0x0111 ]
+DW [ 0x0011 0x1000 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0100 0x0000 ]
+DW [ 0x0100 0x0000 ]
+DW [ 0x0100 0x1110 ]
+DW [ 0x0000 0x0000 ]
+.state_end
+
+.counter
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+.counter_end
+DW []
+
+
+ADD i1 .state 0
+ADD i2 .counter 0
+
+.hor_y
+    LOD v1 i1
+    IMM carry 0
+   
+    .hor_x
+        BSR v2 v1 4
+        BSL v3 v1 4
+   
+        ADD v2 v1 v2
+        ADD v2 v2 v3
+        ADD v2 v2 carry
+       
+        AND x i1 0x1
+   
+        BSL carry v1 12
+
+        INC i1 i1   
+        LOD v1 i1
+        BSR v3 v1 12
+        ADD v2 v2 v3
+   
+        STR i2 v2
+        OUT%HEX v2
+        OUT%TEXT ' '
+
+        INC i2 i2
+        BNZ .hor_x x
+  
+   
+    .hor_x_break
+    BSR v2 v1 4
+    BSL v3 v1 4
+    
+    ADD v2 v1 v2
+    ADD v2 v2 v3
+    ADD v2 v2 carry
+
+
+    STR i2 v2
+    OUT%HEX v2
+    OUT%TEXT '\n'
+
+    INC i1 i1
+    INC i2 i2
+    BRL .hor_y i1 .state_end
+
+
+OUT%TEXT '\n'
+
+ADD i1 .counter 0
+ADD i2 .state 0
+.vert_x
+    IMM v1 0
+    LOD v2 i1
+    ADD i1 i1 2
+    MOV carry v2
+
+    .vert_y
+        LOD v3 i1
+        ADD carry v1 v2
+        ADD carry carry v3
+
+        LOD cell i2
+
+        // OUT%HEX v1
+        // OUT%TEXT '-'
+        // OUT%HEX v2
+        // OUT%TEXT '-'
+        // OUT%HEX v3
+        // OUT%TEXT '-'
+        OUT%HEX carry
+        OUT%TEXT '-'
+        OUT%HEX cell
+
+        MOV v1 v2
+        MOV v2 v3
+
+        OUT%TEXT ' '
+
+        ADD i1 i1 0x2
+        ADD i2 i2 0x2
+
+        BRL .vert_y i1 .counter_end
+    .vert_y_break
+    ADD carry v1 v2
+    OUT%HEX carry
+
+    SUB i1 i1 15
+    SUB i2 i2 15
+
+    OUT%TEXT '\n'
+    OUT%NUMB i1
+    OUT%TEXT '\n'
+
+    ADD i2 i2 0x2
+    BRL .vert_x i1 18
+
+OUT%TEXT '\n'
+OUT%TEXT 'D'
+OUT%TEXT 'o'
+OUT%TEXT 'n'
+OUT%TEXT 'e'
+
+
+
