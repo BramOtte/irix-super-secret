@@ -90,6 +90,12 @@ const width = parseInt(url.searchParams.get("width") ?? "") || 128;
 const height = parseInt(url.searchParams.get("height") ?? "") || 96;
 const color = enum_from_str(Color_Mode, url.searchParams.get("color") ?? "") ?? Color_Mode.Bin;
 
+const tileset_url = url.searchParams.get("tileset") ?? "src/emulator/devices/iris/iris-font.png";
+fetch(tileset_url).then(res => res.blob()).then(blob => {
+    console.log(tileset_url, blob);
+    iris_display.load_font(blob);
+});
+
 memory_update_input.oninput = () => update_views();
 
 const max_clock_speed = 10_000_000_000;

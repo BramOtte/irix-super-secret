@@ -20,6 +20,7 @@ BITS 16
 
 @define counts r4
 @define cells r5
+@define tile r6
 
 @define x r10
 
@@ -95,9 +96,6 @@ IMM sx 0
 
     IMM sy 0
     .vert_y
-        OUT%x sx
-        OUT%y sy
-        INC sy sy
 
         ADD counts v1 v2
 
@@ -111,6 +109,8 @@ IMM sx 0
         MOV v1 v2
         MOV v2 v3
 
+        IMM tile 0xf0
+
         // ----- first cell -----
         AND cnt counts 0xf000
         AND cl cells 0x1000
@@ -118,16 +118,12 @@ IMM sx 0
         BRZ .die1 cl
         BRE .life1 cnt 0x4000
         .die1
-            OUT%COLOR 0
-            AND cells cells 0xefff
+            AND cells cells 0x0fff
         JMP .rule_end1
         .life1
-            OUT%COLOR 1
             OR cells cells 0x1000
+            OR tile tile 0b1000
         .rule_end1
-
-        ADD sx2 sx 1
-        OUT%X sx2
 
         // ---- second cell -----
         AND cnt counts 0x0f00
@@ -136,16 +132,12 @@ IMM sx 0
         BRZ .die2 cl
         BRE .life2 cnt 0x0400
         .die2
-            OUT%COLOR 0
-            AND cells cells 0xf2ff
+            AND cells cells 0xf0ff
         JMP .rule_end2
         .life2
-            OUT%COLOR 1
             OR cells cells 0x0100
+            OR tile tile 0b0100
         .rule_end2
-
-        ADD sx2 sx 2
-        OUT%X sx2
 
         // ---- third cell ----
         AND cnt counts 0x00f0
@@ -154,17 +146,12 @@ IMM sx 0
         BRZ .die3 cl
         BRE .life3 cnt 0x0040
         .die3
-            OUT%COLOR 0
-            AND cells cells 0xffef
+            AND cells cells 0xff0f
         JMP .rule_end3
         .life3
-            OUT%COLOR 1
             OR cells cells 0x0010
+            OR tile tile 0b0010
         .rule_end3
-
-
-        ADD sx2 sx 3
-        OUT%X sx2
 
         // ---- fourth cell ----
         AND cnt counts 0x000f
@@ -173,14 +160,19 @@ IMM sx 0
         BRZ .die4 cl
         BRE .life4 cnt 0x0004
         .die4
-            OUT%COLOR 0
-            AND cells cells 0xfffe
+            AND cells cells 0xfff0
         JMP .rule_end4
         .life4
-            OUT%COLOR 1
             OR cells cells 0x0001
+            OR tile tile 0b0001
         .rule_end4
 
+
+        OUT %x sx
+        OUT %y sy
+        INC sy sy
+
+        OUT %TILE tile
         STR i2 cells
 
         ADD i1 i1 width
@@ -189,24 +181,21 @@ IMM sx 0
         BRL .vert_y sy height
     .vert_y_break
 
-    OUT%Y sy
-    OUT%X sx
-
     SUB i1 i1 col_next_mask
     SUB i2 i2 col_size_mask
 
     ADD sx sx 4
     BRL .vert_x sx width_in_pixels
 
-// OUT%WAIT 100
+// OUT %WAIT 100
 // IN%WAIT r0
 JMP .loop
 
-OUT%TEXT '\n'
-OUT%TEXT 'D'
-OUT%TEXT 'o'
-OUT%TEXT 'n'
-OUT%TEXT 'e'
+OUT %TEXT '\n'
+OUT %TEXT 'D'
+OUT %TEXT 'o'
+OUT %TEXT 'n'
+OUT %TEXT 'e'
 HLT
 
 

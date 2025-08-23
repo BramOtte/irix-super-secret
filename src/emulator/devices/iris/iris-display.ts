@@ -63,12 +63,6 @@ export class Iris_Display implements Device {
             1, 1, 1, 1,
             1, 1, 1, 1,
         ])
-
-        const default_font = "src/emulator/devices/iris/iris-font.png";
-        // const default_font = "examples/iris/badapple.png";
-        fetch(default_font).then(res => res.blob()).then(blob => {
-            this.load_font(blob);
-        })
     }
     async load_font(font_img: ImageBitmapSource) {
         let font = await createImageBitmap(font_img);
