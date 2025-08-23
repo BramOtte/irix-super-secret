@@ -90,27 +90,10 @@ IMM sx 0
 
     IMM sy 0
     .vert_y
-        // OUT%x 100
-        // OUT%y 100
-        // OUT%NUMB sy
-        // OUT%TEXT ' '
-        // OUT%NUMB sx
-        // OUT%TEXT ' '
-        // OUT%NUMB i1
-        // OUT%TEXT ' '
-        // OUT%NUMB i2
-        // OUT%TEXT '\n'
-
         OUT%x sx
         OUT%y sy
         INC sy sy
 
-        // OUT%NUMB sx
-        // OUT%TEXT ' '
-        // OUT%NUMB sy
-        // OUT%TEXT '\n'
-
-        
         ADD counts v1 v2
 
         BGE .skip_lod_v3 i1 .counter_end
@@ -120,21 +103,9 @@ IMM sx 0
 
         LOD cells i2
 
-        // OUT%HEX v1
-        // OUT%TEXT '-'
-        // OUT%HEX v2
-        // OUT%TEXT '-'
-        // OUT%HEX v3
-        // OUT%TEXT '.'
-        // OUT%NUMB cnt
-        // OUT%TEXT '.'
-        // OUT%NUMB cl
-
         MOV v1 v2
         MOV v2 v3
 
-        // OUT%TEXT ' '
-        
         // ----- first cell -----
         AND cnt counts 0xf000
         AND cl cells 0x1000
@@ -213,30 +184,13 @@ IMM sx 0
         BRL .vert_y sy 64
     .vert_y_break
 
-    // ADD counts v1 v2
-    // LOD cells i2
-
     OUT%Y sy
     OUT%X sx
 
     SUB i1 i1 1039
     SUB i2 i2 1023
 
-    // OUT %NUMB i1
-    // OUT%TEXT '-'
-    // OUT%NUMB .counter
-    // OUT%TEXT ' '
-    // OUT%NUMB i2
-    // OUT%TEXT '-'
-    // OUT%NUMB .state
-    // OUT%TEXT '\n'
-    // HLT
-
-//  OUT%TEXT '\n'
-//  OUT%NUMB i1
-//  OUT%TEXT '\n'
     ADD sx sx 4
-    // ADD i2 i2 64
     BRL .vert_x sx 64
 
 // OUT%WAIT 100
