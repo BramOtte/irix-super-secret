@@ -95,6 +95,17 @@ IMM sx 0
 
     IMM sy 0
     .vert_y
+        // OUT%x 100
+        // OUT%y 100
+        // OUT%NUMB sy
+        // OUT%TEXT ' '
+        // OUT%NUMB sx
+        // OUT%TEXT ' '
+        // OUT%NUMB i1
+        // OUT%TEXT ' '
+        // OUT%NUMB i2
+        // OUT%TEXT '\n'
+
         OUT%x sx
         OUT%y sy
         INC sy sy
@@ -104,9 +115,13 @@ IMM sx 0
         // OUT%NUMB sy
         // OUT%TEXT '\n'
 
-        LOD v3 i1
+        
         ADD counts v1 v2
+
+        BGE .skip_lod_v3 i1 .counter_end
+        LOD v3 i1
         ADD counts counts v3
+        .skip_lod_v3
 
         LOD cells i2
 
@@ -134,11 +149,9 @@ IMM sx 0
         .die1
             OUT%COLOR 0
             AND cells cells 0xefff
-           
-            
         JMP .rule_end1
         .life1
-            OUT%COLOR 15
+            OUT%COLOR 1
             OR cells cells 0x1000
         .rule_end1
 
@@ -153,11 +166,11 @@ IMM sx 0
         BRE .life2 cnt 0x0400
         .die2
             OUT%COLOR 0
-            AND cells cells 0xffef
+            AND cells cells 0xf2ff
         JMP .rule_end2
         .life2
-            OUT%COLOR 15
-            OR cells cells 0x0010
+            OUT%COLOR 1
+            OR cells cells 0x0100
         .rule_end2
 
         ADD sx2 sx 2
@@ -174,7 +187,7 @@ IMM sx 0
             AND cells cells 0xffef
         JMP .rule_end3
         .life3
-            OUT%COLOR 15
+            OUT%COLOR 1
             OR cells cells 0x0010
         .rule_end3
 
@@ -193,14 +206,16 @@ IMM sx 0
             AND cells cells 0xfffe
         JMP .rule_end4
         .life4
-            OUT%COLOR 15
+            OUT%COLOR 1
             OR cells cells 0x0001
         .rule_end4
+
+        STR i2 cells
 
         ADD i1 i1 0x2
         ADD i2 i2 0x2
 
-        BRL .vert_y i1 .counter_end
+        BRL .vert_y sy 8
     .vert_y_break
 
     ADD counts v1 v2
@@ -209,14 +224,14 @@ IMM sx 0
     OUT%Y sy
     OUT%X sx
 
-    SUB i1 i1 15
-    SUB i2 i2 15
+    SUB i1 i1 17
+    SUB i2 i2 17
 //  OUT%TEXT '\n'
 //  OUT%NUMB i1
 //  OUT%TEXT '\n'
     ADD sx sx 4
     ADD i2 i2 0x2
-    BRL .vert_x i1 18
+    BRL .vert_x sx 8
 
 OUT%WAIT 100
 IN%WAIT r0
@@ -227,20 +242,21 @@ OUT%TEXT 'D'
 OUT%TEXT 'o'
 OUT%TEXT 'n'
 OUT%TEXT 'e'
+HLT
 
 
 
 
 DW []
 .state
-DW [ 0x0000 0x0001 ]
-DW [ 0x0000 0x0001 ]
-DW [ 0x0000 0x0001 ]
+DW [ 0x0010 0x0010 ]
+DW [ 0x0010 0x0010 ]
+DW [ 0x0010 0x0010 ]
 DW [ 0x0000 0x0000 ]
 DW [ 0x0000 0x0000 ]
-DW [ 0x0000 0x0000 ]
-DW [ 0x0000 0x0111 ]
-DW [ 0x0000 0x0000 ]
+DW [ 0x0100 0x0000 ]
+DW [ 0x0100 0x0111 ]
+DW [ 0x0100 0x0000 ]
 .state_end
 
 .counter
@@ -251,6 +267,10 @@ DW [ 0x0000 0x0000 ]
 DW [ 0x0000 0x0000 ]
 DW [ 0x0000 0x0000 ]
 DW [ 0x0000 0x0000 ]
-DW [ 0x0000 0x0000 ]
+DW [ 0x0000 ]
+.counter_last
+DW [0x0000]
 .counter_end
+DW []
+.counter_next
 DW []
