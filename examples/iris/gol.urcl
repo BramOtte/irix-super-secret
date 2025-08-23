@@ -30,6 +30,15 @@ BITS 16
 @define sy r13
 @define sx2 r14
 
+@define width 16
+@define width_mask 15
+@define width_in_pixels 64 // width * 4
+
+@define height 64
+
+@define col_size_mask 1023 // (width*height) - 1
+@define col_next_mask 1039 // (width*height) + width - 1
+
 
 .loop
 ADD i1 .state 0
@@ -57,8 +66,8 @@ ADD i2 .counter 0
         STR i2 v2
         INC i2 i2
 
-        AND x i1 0x0f
-        BRL .hor_x x 15
+        AND x i1 width_mask
+        BRL .hor_x x width_mask
     .hor_x_break
 
     BSR v2 v1 4
@@ -70,14 +79,10 @@ ADD i2 .counter 0
 
 
     STR i2 v2
-    // OUT%HEX v2
-    // OUT%TEXT '\n'
 
     INC i1 i1
     INC i2 i2
     BRL .hor_y i1 .state_end
-
-// OUT%TEXT '\n'
 
 ADD i1 .counter 0
 ADD i2 .state 0
@@ -85,7 +90,7 @@ IMM sx 0
 .vert_x
     IMM v1 0
     LOD v2 i1
-    ADD i1 i1 16
+    ADD i1 i1 width
     MOV carry v2
 
     IMM sy 0
@@ -178,20 +183,20 @@ IMM sx 0
 
         STR i2 cells
 
-        ADD i1 i1 16
-        ADD i2 i2 16
+        ADD i1 i1 width
+        ADD i2 i2 width
 
-        BRL .vert_y sy 64
+        BRL .vert_y sy height
     .vert_y_break
 
     OUT%Y sy
     OUT%X sx
 
-    SUB i1 i1 1039
-    SUB i2 i2 1023
+    SUB i1 i1 col_next_mask
+    SUB i2 i2 col_size_mask
 
     ADD sx sx 4
-    BRL .vert_x sx 64
+    BRL .vert_x sx width_in_pixels
 
 // OUT%WAIT 100
 // IN%WAIT r0
