@@ -1,9 +1,14 @@
 BITS 16
 
-// Any live cell with fewer than two live neighbours dies, as if by underpopulation.
-// Any live cell with two or three live neighbours lives on to the next generation.
-// Any live cell with more than three live neighbours dies, as if by overpopulation.
-// Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+// Any live cell with fewer than two live neighbours dies, as if by underpopulation (1,2 -> D).
+// Any live cell with two or three live neighbours lives on to the next generation  (3,4 -> L).
+// Any live cell with more than three live neighbours dies, as if by overpopulation (5,6,7,8,9 -> D).
+// Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction (3 -> L).
+
+// Or shorter:
+// Cells with a neighborhood of 3 always live
+// Alive cells also live with a neighborhood of 4
+// All other cells die
 
 @define i1 r21
 @define i2 r22
@@ -11,36 +16,22 @@ BITS 16
 @define v1 r1
 @define v2 r2
 @define v3 r3
+@define carry r4
 
-@define cell r4
+@define counts r4
+@define cells r5
 
 @define x r10
-@define carry r11
 
-.state
-DW [ 0x0001 0x1000 ]
-DW [ 0x0000 0x0111 ]
-DW [ 0x0011 0x1000 ]
-DW [ 0x0000 0x0000 ]
-DW [ 0x0100 0x0000 ]
-DW [ 0x0100 0x0000 ]
-DW [ 0x0100 0x1110 ]
-DW [ 0x0000 0x0000 ]
-.state_end
+@define cnt r10
+@define cl r11
 
-.counter
-DW [ 0x0000 0x0000 ]
-DW [ 0x0000 0x0000 ]
-DW [ 0x0000 0x0000 ]
-DW [ 0x0000 0x0000 ]
-DW [ 0x0000 0x0000 ]
-DW [ 0x0000 0x0000 ]
-DW [ 0x0000 0x0000 ]
-DW [ 0x0000 0x0000 ]
-.counter_end
-DW []
+@define sx r12
+@define sy r13
+@define sx2 r14
 
 
+.loop
 ADD i1 .state 0
 ADD i2 .counter 0
 
@@ -66,8 +57,8 @@ ADD i2 .counter 0
         ADD v2 v2 v3
    
         STR i2 v2
-        OUT%HEX v2
-        OUT%TEXT ' '
+        // OUT%HEX v2
+        // OUT%TEXT ' '
 
         INC i2 i2
         BNZ .hor_x x
@@ -83,63 +74,153 @@ ADD i2 .counter 0
 
 
     STR i2 v2
-    OUT%HEX v2
-    OUT%TEXT '\n'
+    // OUT%HEX v2
+    // OUT%TEXT '\n'
 
     INC i1 i1
     INC i2 i2
     BRL .hor_y i1 .state_end
 
 
-OUT%TEXT '\n'
+// OUT%TEXT '\n'
 
 ADD i1 .counter 0
 ADD i2 .state 0
+IMM sx 0
 .vert_x
     IMM v1 0
     LOD v2 i1
     ADD i1 i1 2
     MOV carry v2
 
+    IMM sy 0
     .vert_y
-        LOD v3 i1
-        ADD carry v1 v2
-        ADD carry carry v3
+        OUT%x sx
+        OUT%y sy
+        INC sy sy
 
-        LOD cell i2
+        // OUT%NUMB sx
+        // OUT%TEXT ' '
+        // OUT%NUMB sy
+        // OUT%TEXT '\n'
+
+        LOD v3 i1
+        ADD counts v1 v2
+        ADD counts counts v3
+
+        LOD cells i2
 
         // OUT%HEX v1
         // OUT%TEXT '-'
         // OUT%HEX v2
         // OUT%TEXT '-'
         // OUT%HEX v3
-        // OUT%TEXT '-'
-        OUT%HEX carry
-        OUT%TEXT '-'
-        OUT%HEX cell
+        // OUT%TEXT '.'
+        // OUT%NUMB cnt
+        // OUT%TEXT '.'
+        // OUT%NUMB cl
 
         MOV v1 v2
         MOV v2 v3
 
-        OUT%TEXT ' '
+        // OUT%TEXT ' '
+        
+        // ----- first cell -----
+        AND cnt counts 0xf000
+        AND cl cells 0x1000
+        BRE .life1 cnt 0x3000
+        BRZ .die1 cl
+        BRE .life1 cnt 0x4000
+        .die1
+            OUT%COLOR 0
+            AND cells cells 0xefff
+           
+            
+        JMP .rule_end1
+        .life1
+            OUT%COLOR 15
+            OR cells cells 0x1000
+        .rule_end1
+
+        ADD sx2 sx 1
+        OUT%X sx2
+
+        // ---- second cell -----
+        AND cnt counts 0x0f00
+        AND cl cells 0x10
+        BRE .life2 cnt 0x0300
+        BRZ .die2 cl
+        BRE .life2 cnt 0x0400
+        .die2
+            OUT%COLOR 0
+            AND cells cells 0xffef
+        JMP .rule_end2
+        .life2
+            OUT%COLOR 15
+            OR cells cells 0x0010
+        .rule_end2
+
+        ADD sx2 sx 2
+        OUT%X sx2
+
+        // ---- third cell ----
+        AND cnt counts 0x00f0
+        AND cl cells 0x0010
+        BRE .life3 cnt 0x0030
+        BRZ .die3 cl
+        BRE .life3 cnt 0x0040
+        .die3
+            OUT%COLOR 0
+            AND cells cells 0xffef
+        JMP .rule_end3
+        .life3
+            OUT%COLOR 15
+            OR cells cells 0x0010
+        .rule_end3
+
+
+        ADD sx2 sx 3
+        OUT%X sx2
+
+        // ---- fourth cell ----
+        AND cnt counts 0x000f
+        AND cl cells 0x0001
+        BRE .life4 cnt 0x0003
+        BRZ .die4 cl
+        BRE .life4 cnt 0x0004
+        .die4
+            OUT%COLOR 0
+            AND cells cells 0xfffe
+        JMP .rule_end4
+        .life4
+            OUT%COLOR 15
+            OR cells cells 0x0001
+        .rule_end4
 
         ADD i1 i1 0x2
         ADD i2 i2 0x2
 
         BRL .vert_y i1 .counter_end
     .vert_y_break
-    ADD carry v1 v2
-    OUT%HEX carry
+
+    ADD counts v1 v2
+    LOD cells i2
+
+    OUT%Y sy
+    OUT%X sx
 
     SUB i1 i1 15
     SUB i2 i2 15
-
-    OUT%TEXT '\n'
-    OUT%NUMB i1
-    OUT%TEXT '\n'
-
+//  OUT%TEXT '\n'
+//  OUT%NUMB i1
+//  OUT%TEXT '\n'
+    ADD sx sx 4
     ADD i2 i2 0x2
     BRL .vert_x i1 18
+
+OUT%WAIT 100
+IN%WAIT r0
+JMP .loop
 
 OUT%TEXT '\n'
 OUT%TEXT 'D'
@@ -149,3 +230,27 @@ OUT%TEXT 'e'
 
 
 
+
+DW []
+.state
+DW [ 0x0000 0x0001 ]
+DW [ 0x0000 0x0001 ]
+DW [ 0x0000 0x0001 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0111 ]
+DW [ 0x0000 0x0000 ]
+.state_end
+
+.counter
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+DW [ 0x0000 0x0000 ]
+.counter_end
+DW []
