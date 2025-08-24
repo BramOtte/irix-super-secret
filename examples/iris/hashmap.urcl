@@ -1,0 +1,167 @@
+BITS 16
+
+
+@DEFINE a1 r1
+@DEFINE a2 r2
+
+@DEFINE t1 r3
+@DEFINE t2 r4
+
+@DEFINE EMPTY 0xffff
+@DEFINE TUMB 0xfffe
+
+@DEFINE TABLE M0
+@DEFINE TABLE_END M256
+@DEFINE TABLE_MASK 0xfe
+
+// initialize memory
+IMM t1 0
+.loop
+    STR t1 EMPTY
+    INC t1 t1
+    BRL .loop t1 0x1000
+
+IMM a1 0x00_21
+IMM a2 0x1234
+HCAL .put
+
+IMM a1 0x10_00
+IMM a2 0x4321
+HCAL .put
+
+IMM a2 0
+IMM a1 0x00_21
+HCAL .get
+OUT %HEX a2
+OUT %TEXT '\n'
+
+IMM a2 0
+IMM a1 0x10_00
+HCAL .get
+OUT %HEX a2
+OUT %TEXT '\n'
+
+IMM a1 0x00_21
+HCAL .del
+
+
+IMM a2 0
+IMM a1 0x00_21
+HCAL .get
+OUT %HEX a2
+OUT %TEXT '\n'
+
+IMM a2 0
+IMM a1 0x10_00
+HCAL .get
+OUT %HEX a2
+OUT %TEXT '\n'
+
+IMM a1 0x10_00
+HCAL .del
+
+
+IMM a2 0
+IMM a1 0x00_21
+HCAL .get
+OUT %HEX a2
+OUT %TEXT '\n'
+
+IMM a2 0
+IMM a1 0x10_00
+HCAL .get
+OUT %HEX a2
+OUT %TEXT '\n'
+
+HLT
+
+/// Puts a value into the hashmap, putting the old value if it exists in a2 otherwise doesn't touch a2
+// fn put (key: a1, value: a2) -> (found: a2) # (t1, t2) {
+.put
+    // get inital index {
+    BSR t1 a1 7
+    XOR t1 t1 a1
+    AND t1 t1 TABLE_MASK
+    // }
+    LOD t2 t1
+    BRE .put_found t2 a1
+    BGE .put_empty t2 TUMB
+
+    .put_loop
+        ADD t1 t1 2
+        AND t1 t1 TABLE_MASK
+        LOD t2 t1
+        BRE .put_found t2 a1
+        BRL .put_loop t2 TUMB
+
+    .put_empty
+    STR t1 a1
+    INC t1 t1
+    STR t1 a2
+    HRET
+
+    .put_found
+    LOD a2 t1
+    HRET
+// }
+
+/// deletes a key from a hashmap leaving EMPTY in its place if nothing follows otherwise TUMB
+// fn del (key: a1) -> () # (t1, t2) {
+.del
+    // get inital index {
+    BSR t1 a1 7
+    XOR t1 t1 a1
+    AND t1 t1 TABLE_MASK
+    // }
+    LOD t2 t1
+    BRE .del_found t2 a1
+    BRE .del_empty t2 EMPTY
+
+    .del_loop
+        ADD t1 t1 2
+        AND t1 t1 TABLE_MASK
+        LOD t2 t1
+        BRE .del_empty t2 EMPTY
+        BNE .del_loop t2 a1
+
+    .del_found
+    ADD t2 t1 2
+    LOD t2 t2
+    BRE .del_next_empty t2 EMPTY
+
+    STR t1 TUMB
+
+    .del_empty
+    HRET
+
+    .del_next_empty
+    STR t1 EMPTY
+    HRET
+// }
+
+
+/// Tries to get a value from a hashmap, if the value exists puts it in a2, leaves a2 untouched otherwise
+// fn get (key: a1) -> (found: a2) # (t1, t2) {
+.get
+    // get inital index {
+    BSR t1 a1 7
+    XOR t1 t1 a1
+    AND t1 t1 TABLE_MASK
+    // }
+    LOD t2 t1
+    BRE .get_found t2 a1
+    BRE .get_empty t2 EMPTY
+
+    .get_loop
+        ADD t1 t1 2
+        AND t1 t1 TABLE_MASK
+        LOD t2 t1
+        BRE .get_empty t2 EMPTY
+        BNE .get_loop t2 a1
+
+    .get_found
+    INC t2 t1
+    LOD a2 t2
+    .get_empty
+    HRET
+// }
