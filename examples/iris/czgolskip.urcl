@@ -1,0 +1,435 @@
+BITS 16
+MINREG 40
+MINSTACK 2
+MINHEAP 10000
+@define x r1
+@define y r2
+@define i r3
+@define old_frame r4
+@define new_frame r5
+@define top0 r6
+@define top1 r7
+@define top2 r8
+@define top3 r6
+@define top4 r7
+@define top5 r8
+@define top6 r6
+@define top7 r7
+@define top8 r8
+@define top9 r6
+@define tmp1 r6
+@define tmp2 r7
+@define tmp3 r8
+@define tmp4 r6
+@define tmp5 r7
+@define tmp6 r8
+@define tmp7 r6
+@define tmp8 r7
+@define tmp9 r8
+@define t1 r6
+@define t2 r7
+@define line0 r9
+@define line1 r10
+@define line2 r11
+@define line3 r12
+@define line4 r13
+@define line5 r14
+@define line6 r15
+@define line7 r16
+@define line8 r17
+@define line9 r18
+@define result1 r19
+@define result2 r20
+@define result3 r21
+@define result4 r22
+@define result5 r23
+@define result6 r24
+@define result7 r25
+@define result8 r26
+@define @line_size_x0 0
+@define @line_size_x1 5 // = roof(width / 14)
+@define @line_size_x2 10
+@define @line_size_x3 15
+@define @line_size_x4 20
+@define @line_size_x5 25
+@define @line_size_x6 30
+@define @line_size_x7 35
+@define @line_size_x8 40
+@define @line_size_x9 45
+// frame_size = height * line_size + line_size (padding)
+SUB t1 .frame1 @line_size_x1
+SUB t2 .frame2 @line_size_x1
+PSH t1
+PSH t2
+.game_loop
+    // swapping frame buffers each turn
+    POP new_frame
+    POP old_frame
+    PSH new_frame
+    PSH old_frame
+    IMM y 0
+    .y_loop
+        IMM x 0
+        IMM result1 0
+        IMM result2 0
+        IMM result3 0
+        IMM result4 0
+        IMM result5 0
+        IMM result6 0
+        IMM result7 0
+        IMM result8 0
+        LLOD line0 old_frame @line_size_x0
+        LLOD line1 old_frame @line_size_x1
+        LLOD line2 old_frame @line_size_x2
+        LLOD line3 old_frame @line_size_x3
+        LLOD line4 old_frame @line_size_x4
+        LLOD line5 old_frame @line_size_x5
+        LLOD line6 old_frame @line_size_x6
+        LLOD line7 old_frame @line_size_x7
+        LLOD line8 old_frame @line_size_x8
+        LLOD line9 old_frame @line_size_x9
+        INC old_frame old_frame
+        IMM i 1
+        .x_loop
+            LSH line0 line0
+            LSH line1 line1
+            LSH line2 line2
+            LSH line3 line3
+            LSH line4 line4
+            LSH line5 line5
+            LSH line6 line6
+            LSH line7 line7
+            LSH line8 line8
+            LSH line9 line9
+            BNE .x14_skip i 14
+                LLOD t1 old_frame @line_size_x0
+                ADD line0 line0 t1
+                LLOD t1 old_frame @line_size_x1
+                ADD line1 line1 t1
+                LLOD t1 old_frame @line_size_x2
+                ADD line2 line2 t1
+                LLOD t1 old_frame @line_size_x3
+                ADD line3 line3 t1
+                LLOD t1 old_frame @line_size_x4
+                ADD line4 line4 t1
+                LLOD t1 old_frame @line_size_x5
+                ADD line5 line5 t1
+                LLOD t1 old_frame @line_size_x6
+                ADD line6 line6 t1
+                LLOD t1 old_frame @line_size_x7
+                ADD line7 line7 t1
+                LLOD t1 old_frame @line_size_x8
+                ADD line8 line8 t1
+                LLOD t1 old_frame @line_size_x9
+                ADD line9 line9 t1
+                INC old_frame old_frame
+            .x14_skip
+            LSH result1 result1
+            LSH result2 result2
+            LSH result3 result3
+            LSH result4 result4
+            LSH result5 result5
+            LSH result6 result6
+            LSH result7 result7
+            LSH result8 result8
+
+            BNZ .skip_skip line0
+            BNZ .skip_skip line1
+            BNZ .skip_skip line2
+            BNZ .skip_skip line3
+            BNZ .skip_skip line4
+            BNZ .skip_skip line5
+            BNZ .skip_skip line6
+            BNZ .skip_skip line7
+            BNZ .skip_skip line8
+            BNZ .skip_skip line9
+                JMP .skip_algo
+            .skip_skip
+
+            // algorithm
+            AND top0 line0 0xE000
+            BSR top0 top0 7
+            AND top1 line1 0xE000
+            BSR top1 top1 10
+
+            //AND top2 line2 0xE000
+            //BSR top2 top2 13
+            BSR top2 line2 13
+            ADD tmp1 top0 top1
+            ADD tmp1 tmp1 top2
+            LLOD tmp1 .gol_lut_13 tmp1
+            ADD result1 result1 tmp1
+            OUT%X x
+            OUT%Y y
+            OUT%COLOR tmp1
+            INC y y
+
+            AND top3 line3 0xE000
+            BSR top3 top3 7
+            ADD tmp2 top1 top2
+            ADD tmp2 tmp2 top3
+            LLOD tmp2 .gol_lut_7 tmp2
+            ADD result2 result2 tmp2
+            //OUT%X x
+            OUT%Y y
+            OUT%COLOR tmp2
+            INC y y
+
+            AND top4 line4 0xE000
+            BSR top4 top4 10
+            ADD tmp3 top2 top3
+            ADD tmp3 tmp3 top4
+            LLOD tmp3 .gol_lut_10 tmp3
+            ADD result3 result3 tmp3
+            //OUT%X x
+            OUT%Y y
+            OUT%COLOR tmp3
+            INC y y
+
+            //AND top5 line5 0xE000
+            //BSR top5 top5 13
+            BSR top5 line5 13
+            ADD tmp4 top3 top4
+            ADD tmp4 tmp4 top5
+            LLOD tmp4 .gol_lut_13 tmp4
+            ADD result4 result4 tmp4
+            //OUT%X x
+            OUT%Y y
+            OUT%COLOR tmp4
+            INC y y
+
+            AND top6 line6 0xE000
+            BSR top6 top6 7
+            ADD tmp5 top4 top5
+            ADD tmp5 tmp5 top6
+            LLOD tmp5 .gol_lut_7 tmp5
+            ADD result5 result5 tmp5
+            //OUT%X x
+            OUT%Y y
+            OUT%COLOR tmp5
+            INC y y
+
+            AND top7 line7 0xE000
+            BSR top7 top7 10
+            ADD tmp6 top5 top6
+            ADD tmp6 tmp6 top7
+            LLOD tmp6 .gol_lut_10 tmp6
+            ADD result6 result6 tmp6
+            //OUT%X x
+            OUT%Y y
+            OUT%COLOR tmp3
+            INC y y
+
+            //AND top8 line8 0xE000
+            //BSR top8 top8 13
+            BSR top8 line8 13
+            ADD tmp7 top6 top7
+            ADD tmp7 tmp7 top8
+            LLOD tmp7 .gol_lut_13 tmp7
+            ADD result7 result7 tmp7
+            //OUT%X x
+            OUT%Y y
+            OUT%COLOR tmp7
+            INC y y
+
+            AND top9 line9 0xE000
+            BSR top9 top9 7
+            ADD tmp8 top7 top8
+            ADD tmp8 tmp8 top9
+            LLOD tmp8 .gol_lut_7 tmp8
+            ADD result8 result8 tmp8
+            //OUT%X x
+            OUT%Y y
+            OUT%COLOR tmp8
+            SUB y y 7
+
+            .skip_algo
+            BNE .x14_skip2 i 14
+                LSTR new_frame @line_size_x1 result1
+                LSTR new_frame @line_size_x2 result2
+                LSTR new_frame @line_size_x3 result3
+                LSTR new_frame @line_size_x4 result4
+                LSTR new_frame @line_size_x5 result5
+                LSTR new_frame @line_size_x6 result6
+                LSTR new_frame @line_size_x7 result7
+                LSTR new_frame @line_size_x8 result8
+                INC new_frame new_frame
+                IMM result1 0
+                IMM result2 0
+                IMM result3 0
+                IMM result4 0
+                IMM result5 0
+                IMM result6 0
+                IMM result7 0
+                IMM result8 0
+                IMM i 0
+            .x14_skip2
+
+            INC i i
+            INC x x
+            BRL .x_loop x 64
+        BSL result1 result1 6 // 14 * line_size - width
+        LSTR new_frame @line_size_x1 result1
+        BSL result2 result2 6
+        LSTR new_frame @line_size_x2 result2
+        BSL result3 result3 6
+        LSTR new_frame @line_size_x3 result3
+        BSL result4 result4 6
+        LSTR new_frame @line_size_x4 result4
+        BSL result5 result5 6
+        LSTR new_frame @line_size_x5 result5
+        BSL result6 result6 6
+        LSTR new_frame @line_size_x6 result6
+        BSL result7 result7 6
+        LSTR new_frame @line_size_x7 result7
+        BSL result8 result8 6
+        LSTR new_frame @line_size_x8 result8
+        INC new_frame new_frame
+        INC y y
+        ADD old_frame old_frame @line_size_x7
+        ADD new_frame new_frame @line_size_x7
+        ADD y y 7
+        BRL .y_loop y 64
+@debug
+    JMP .game_loop
+
+DW
+.gol_lut_7
+DW [ 0 0 0 0 0 0 0 1 0 0 0 1 0 1 1 1 0 0 0 1 0 1 1 1 0 1 1 1 1 0 1 0 ]
+DW [ 0 0 0 1 0 1 1 1 0 1 1 1 1 0 1 0 0 1 1 1 1 0 1 0 1 0 1 0 0 0 0 0 ]
+DW [ 0 0 0 1 0 1 1 1 0 1 1 1 1 0 1 0 0 1 1 1 1 0 1 0 1 0 1 0 0 0 0 0 ]
+DW [ 0 1 1 1 1 0 1 0 1 0 1 0 0 0 0 0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 0 0 0 1 0 1 1 1 0 1 1 1 1 0 1 0 0 1 1 1 1 0 1 0 1 0 1 0 0 0 0 0 ]
+DW [ 0 1 1 1 1 0 1 0 1 0 1 0 0 0 0 0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 0 1 1 1 1 0 1 0 1 0 1 0 0 0 0 0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 0 0 0 1 0 1 1 1 0 1 1 1 1 0 1 0 0 1 1 1 1 0 1 0 1 0 1 0 0 0 0 0 ]
+DW [ 0 1 1 1 1 0 1 0 1 0 1 0 0 0 0 0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 0 1 1 1 1 0 1 0 1 0 1 0 0 0 0 0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 0 1 1 1 1 0 1 0 1 0 1 0 0 0 0 0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+.gol_lut_10
+DW [ 0 0 0 0 0 0 0 1 0 0 0 1 0 1 1 0 0 0 0 1 0 1 1 0 0 1 1 0 1 0 0 0 ]
+DW [ 0 0 0 1 0 1 1 0 0 1 1 0 1 0 0 0 0 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 ]
+DW [ 0 0 0 1 0 1 1 0 0 1 1 0 1 0 0 0 0 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 ]
+DW [ 0 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 0 0 0 1 0 1 1 1 0 1 1 1 1 1 1 0 0 1 1 1 1 1 1 0 1 1 1 0 1 0 0 0 ]
+DW [ 0 1 1 1 1 1 1 0 1 1 1 0 1 0 0 0 1 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 ]
+DW [ 0 1 1 1 1 1 1 0 1 1 1 0 1 0 0 0 1 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 ]
+DW [ 1 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 0 0 0 1 0 1 1 0 0 1 1 0 1 0 0 0 0 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 ]
+DW [ 0 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 0 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 0 1 1 1 1 1 1 0 1 1 1 0 1 0 0 0 1 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 ]
+DW [ 1 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 1 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+.gol_lut_13
+DW [ 0 0 0 0 0 0 0 1 0 0 0 1 0 1 1 0 0 0 0 1 0 1 1 1 0 1 1 1 1 1 1 0 ]
+DW [ 0 0 0 1 0 1 1 0 0 1 1 0 1 0 0 0 0 1 1 1 1 1 1 0 1 1 1 0 1 0 0 0 ]
+DW [ 0 0 0 1 0 1 1 0 0 1 1 0 1 0 0 0 0 1 1 1 1 1 1 0 1 1 1 0 1 0 0 0 ]
+DW [ 0 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 1 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 ]
+DW [ 0 0 0 1 0 1 1 0 0 1 1 0 1 0 0 0 0 1 1 1 1 1 1 0 1 1 1 0 1 0 0 0 ]
+DW [ 0 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 1 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 ]
+DW [ 0 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 1 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 ]
+DW [ 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 0 0 0 1 0 1 1 0 0 1 1 0 1 0 0 0 0 1 1 1 1 1 1 0 1 1 1 0 1 0 0 0 ]
+DW [ 0 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 1 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 ]
+DW [ 0 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 1 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 ]
+DW [ 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 0 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 1 1 1 0 1 0 0 0 1 0 0 0 0 0 0 0 ]
+DW [ 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]
+DW [ 0 0 0 0 0 ] // padding
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b11000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b11001100000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00001100110000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000110000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+
+.frame1
+DW [ 0b11000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000011_000000 ]
+DW [ 0b11000000000000 0b00000000000010 0b00000000000000 0b00000000000000 0b00000011_000000 ]
+DW [ 0b00000000000000 0b00000000001010 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b01000000010100 0b00000000011000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b11000000100100 0b00000000011000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00011000000001 0b10000110010100 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00011000000011 0b10000110001010 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000001 0b10000110000010 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b11000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b01000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b01110000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b01110000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b01110000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b01110000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b01110000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b01110000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00100000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000011_000000 ]
+DW [ 0b00000000000000 0b00000000000000 0b00000000000000 0b00000000000000 0b00000011_000000 ]
+DW [ 0 0 0 0 0 ] // padding
+DW [ 0 0 0 0 0 ] // padding
+DW [ 0 0 0 0 0 ] // padding
+DW [ 0 0 0 0 0 ] // padding
+DW [ 0 0 0 0 0 ] // padding
+DW [ 0 0 0 0 0 ] // padding
+DW [ 0 0 0 0 0 ] // padding
+DW [ 0 0 0 0 0 ] // padding
+DW [ 0 0 0 0 0 ] // padding
+.frame2
+DW
