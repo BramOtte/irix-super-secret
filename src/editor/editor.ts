@@ -262,18 +262,16 @@ export class Editor_Window extends HTMLElement {
     }
 
     public render_lines(){
-        if (this.input.value.length > this.fancy_limit) {
-            this.colors.style.display = "none";
+        const disable_fancy = this.input.value.length > this.fancy_limit;
+        
+        this.input.style.height = "0px";
+        const height = this.input.scrollHeight
+        this.input.style.height = height + "px";
 
-            const height = this.input.scrollHeight;
-            this.input.style.height = height + "px";
+        if (disable_fancy) {
+            this.colors.style.display = "none";
         } else {
             this.colors.style.display = "block";
-
-            this.code.style.height = this.input.scrollHeight + "px";
-            this.input.style.height = "";
-            const height = this.input.scrollHeight;
-            this.input.style.height = height + "px";
         }
 
         const lines = this.input.value.split("\n");
