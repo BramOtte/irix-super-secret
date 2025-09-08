@@ -114,6 +114,8 @@ const width = parseInt(url.searchParams.get("width") ?? "");
 const height = parseInt(url.searchParams.get("height") ?? "");
 const color = enum_from_str(Color_Mode, url.searchParams.get("color") ?? "");
 
+source_input.fancy_limit = Number(url.searchParams.get("fancy-limit")) || source_input.fancy_limit;
+
 memory_update_input.oninput = () => update_views();
 
 const max_clock_speed = 10_000_000_000;
