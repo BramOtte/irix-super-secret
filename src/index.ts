@@ -140,6 +140,8 @@ fetch(tileset_url).then(res => res.blob()).then(blob => {
     iris_display.load_font(blob);
 });
 
+source_input.fancy_limit = Number(url.searchParams.get("fancy-limit")) || source_input.fancy_limit;
+
 memory_update_input.oninput = () => update_views();
 
 const max_clock_speed = 10_000_000_000;

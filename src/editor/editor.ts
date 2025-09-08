@@ -20,6 +20,7 @@ export class Editor_Window extends HTMLElement {
     private saved_marker: HTMLOutputElement;
     back_button: HTMLButtonElement;
     forward_button: HTMLButtonElement;
+    fancy_limit: number = 300_000;
 
     public debug_toggle_handler?: DebugToggleHandler;
 
@@ -261,10 +262,20 @@ export class Editor_Window extends HTMLElement {
     }
 
     public render_lines(){
-        this.input.style.height = "0px";
-        const height = this.input.scrollHeight
-        this.input.style.height = height + "px";
-        
+        if (this.input.value.length > this.fancy_limit) {
+            this.colors.style.display = "none";
+
+            const height = this.input.scrollHeight;
+            this.input.style.height = height + "px";
+        } else {
+            this.colors.style.display = "block";
+
+            this.code.style.height = this.input.scrollHeight + "px";
+            this.input.style.height = "";
+            const height = this.input.scrollHeight;
+            this.input.style.height = height + "px";
+        }
+
         const lines = this.input.value.split("\n");
         this.lines = lines;
         {
@@ -281,6 +292,11 @@ export class Editor_Window extends HTMLElement {
                     this.line_nrs.lastChild?.remove()
                 }
             }
+        }
+
+
+        if (this.input.value.length > this.fancy_limit) {
+            return;
         }
 
         const ch = this.input.scrollHeight / Math.max(1, this.lines.length);

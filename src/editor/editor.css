@@ -45,13 +45,14 @@ editor-window textarea {
     padding-left: 0.5rem;
     caret-color: white;
 
+    field-sizing: content;
     height: max-content;
     min-width: calc(100% - 6ch);
     overflow: hidden;    
     
     resize: none;
     background-color: black;
-    color: transparent;
+    color: white;
     caret-color: white;
 }
 
