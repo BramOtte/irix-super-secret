@@ -17,13 +17,13 @@ import { Sound } from "./emulator/devices/sound.js";
 import { Storage } from "./emulator/devices/storage.js";
 import { Emulator, Step_Result } from "./emulator/emulator.js";
 import { parse } from "./emulator/parser.js";
-import { Arr, enum_from_str, enum_strings, expand_warning, registers_to_string, memoryToString, format_int, registers_to_string_ } from "./emulator/util.js";
+import { enum_from_str, enum_strings, expand_warning, registers_to_string, format_int, fillin_template, registers_to_string_ } from "./emulator/util.js";
 import { Scroll_Out } from "./scroll-out/scroll-out.js";
-import { register_count } from "./emulator/instructions.js";
 import { BufferView } from "./buffer_view/buffer_view.js";
 import { Iris_Display } from "./emulator/devices/iris/iris-display.js";
 import { urcl2c } from "./emulator/urcl2c.js";
 import { Run_Type } from "./emulator/wasm/urcl2wasm.js";
+import { Break, break_flag } from "./emulator/breaks.js";
 
 let animation_frame: number | undefined;
 let running = false;
@@ -64,6 +64,51 @@ const jit_radio_js = document.getElementById("jit-radio-js") as HTMLInputElement
 const jit_radio_wasm = document.getElementById("jit-radio-wasm") as HTMLInputElement;
 const count_radio_jumps = document.getElementById("count-radio-jumps") as HTMLInputElement;
 const count_radio_none = document.getElementById("count-radio-none") as HTMLInputElement;
+const bundle_button = document.getElementById("bundle-button");
+
+const bundle_settings = document.getElementById("bundle-settings");
+
+if (bundle_button) bundle_button.onclick = async () => {
+    const title = "your title";
+    const settings = {
+        code: source_input.value,
+        search: url.search,
+    };
+
+    const [template, js] = await Promise.all([
+        fetch("bundle.template.html").then(r => r.text()),
+        fetch("js/index.js").then(r => r.text()),
+    ]);
+    
+    const html = fillin_template(template, [
+        ["TITLE", title],
+        [`<script type="module" src="js/index.js"></script>`, `<script type=module>${js}</script>`],
+        [`{"code": "OUT %COLOR 1"}`, JSON.stringify(settings)],
+    ])
+
+    const data_url = URL.createObjectURL(new Blob([html], {type: "text/html"}));
+    const a = document.createElement("a");
+    a.download = `index.html`;
+    a.href = data_url;
+    a.click();
+};
+
+let url = location.origin == null || location.origin == "null" ? new URL(location.href) : new URL(location.href, location.origin);
+if (bundle_settings) {
+    const settings = JSON.parse(bundle_settings.textContent.trim());
+    if (typeof settings.search === "string") {
+        url.search = settings.search;
+    } else {
+        url.search = "";
+    }
+    if (typeof settings.code === "string") {
+        queueMicrotask(() => {
+            source_input.value = settings.code;
+            compile_and_run();
+        })
+    }
+}
+
 
 
 
@@ -83,7 +128,6 @@ const call_stack = document.getElementById("call-stack") as HTMLOutputElement;
 const data_stack = document.getElementById("data-stack") as HTMLOutputElement;
 const register_save_stack = document.getElementById("register-save-stack") as HTMLOutputElement;
 
-const url = new URL(location.href, location.origin)
 const srcurl = url.searchParams.get("srcurl");
 const storage_url = url.searchParams.get("storage");
 const width = parseInt(url.searchParams.get("width") ?? "") || 128;
@@ -189,8 +233,9 @@ console_input.addEventListener("keydown", e => {
         } else {
             console_input.value += "\n";
         }
-        
-        input_callback();
+        const cb = input_callback;
+        input_callback = undefined;
+        cb();
     }
 })
 
@@ -308,6 +353,39 @@ emulator.add_io_device(new Mouse(canvas));
 
 source_input.oninput = oninput;
 auto_run_input.onchange = oninput;
+source_input.debug_toggle_handler = {
+    set_debug_toggle(line_nr, expression) {
+        const info = emulator?.debug_info;
+        if (!info) {
+            return;
+        }
+        const pc = info.linenr_to_pc[line_nr-1];
+        if (pc === undefined) {
+            return;
+        }
+        if (expression === undefined) {
+            info.program_breaks[pc] = break_flag([]);
+        } else {
+            info.program_breaks[pc] = break_flag([Break.ONREAD]);
+        }
+        emulator.check_debug_info();
+    },
+
+    get_debug_toggle(line_nr) {
+        const info = emulator?.debug_info;
+        if (!info) {
+            return
+        }
+        const pc = info.linenr_to_pc[line_nr-1];        
+        if (pc === undefined) {
+            return
+        }
+
+        const flags = info.program_breaks[pc];
+        
+        return flags ? "" : undefined;
+    }
+}
 
 let save_timeout: undefined | NodeJS.Timeout;
 let save_timeout_time = 5000;
@@ -343,6 +421,11 @@ function save() {
         clearTimeout(save_timeout);
         save_timeout = undefined;
     }
+
+    if (bundle_settings) {
+        return;
+    }
+
     localStorage.setItem("history-size", ""+history_size);
     const offset = (Math.max(0, 0| (Number(localStorage.getItem("history-offset")) || 0)) + 1)  % history_size;
     localStorage.setItem("history-offset", ""+offset);
@@ -470,6 +553,7 @@ try {
     pause_button.disabled = false;
     step_button.disabled = false;
     running = false;
+    source_input.render_lines();
     update_views();
     return true;
 } catch (e){
@@ -576,7 +660,7 @@ function update_views(){
     }
     register_view.innerText = 
         registers_to_string(emulator)
-    const lines = emulator.debug_info.pc_line_nrs
+    const lines = emulator.debug_info.pc_to_linenr;
     const line = lines[Math.min(emulator.pc, lines.length-1)];
     source_input.set_pc_line(line);
     source_input.set_line_profile(lines, emulator.pc_counters);
@@ -590,7 +674,7 @@ function update_views(){
     for (let i = 0; i < emulator.csp; i++) {
         const v = emulator.call_stack[i];
         const hex = `0x${v.toString(16).padStart(4, "0")}`;
-        const line_num = emulator.debug_info.pc_line_nrs[v];
+        const line_num = emulator.debug_info.pc_to_linenr[v];
         const line = line_num ? `${hex} ${line_num} | ${emulator.debug_info.lines[line_num-1].trim()}` : v;
         call_stack.value += line + "\n";
     }
@@ -600,7 +684,7 @@ change_color_mode();
 let storage_promise: undefined | Promise<unknown>;
 
 started = true;
-if (srcurl){
+if (srcurl && !bundle_settings){
     fetch(srcurl).then(res => res.text()).then(async (text) => {
         await storage_promise;
         if (source_input.value){
@@ -616,6 +700,10 @@ if (srcurl){
 else
 autofill:
 {
+    if (bundle_settings) {
+        break autofill;
+    }
+
     const offset = Number(localStorage.getItem("history-offset"));
     if (!Number.isInteger(offset)){
         break autofill;
