@@ -247,7 +247,15 @@ console_copy.addEventListener("click", e => {
 
 
 const canvas = document.getElementsByTagName("canvas")[0];
-let ctx = canvas.getContext("webgl2");
+
+const use_canvas2d =  url.searchParams.get("canvas2d") !== null;
+
+let ctx: CanvasRenderingContext2D | WebGL2RenderingContext | null = use_canvas2d ? canvas.getContext("2d") : canvas.getContext("webgl2", {preserveDrawingBuffer: true});
+
+if (!ctx) {
+    console.warn("Unable to get webgl2 rendering context, falling back to 2d context");
+    ctx = canvas.getContext("2d");
+}
 
 if (!ctx) {
     throw new Error("Unable to get rendering context");
@@ -281,6 +289,13 @@ fullscreen_button.onclick = () => {
     canvas.requestPointerLock();
     canvas.requestFullscreen();
 }
+document.getElementById("display-save")!.onclick = () => {
+    const a = document.createElement("a");
+    a.href = canvas.toDataURL("image/png");
+    a.download = "canvas.png";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
 
 width_input.value = ""+canvas.width
 height_input.value = ""+canvas.height
