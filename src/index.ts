@@ -3,7 +3,7 @@ import "./scroll-out/scroll-out.js";
 import "./buffer_view/buffer_view.js";
 
 import { Editor_Window } from "./editor/editor.js";
-import { compile } from "./emulator/compiler.js";
+import { compile, Debug_Info, Program } from "./emulator/compiler.js";
 import { Clock } from "./emulator/devices/clock.js";
 import { Console_IO } from "./emulator/devices/console-io.js";
 import { Color_Mode, Display } from "./emulator/devices/display.js";
@@ -482,11 +482,14 @@ function compile_and_run(){
         frame();
     }
 }
-function compile_and_reset(): boolean {
-    clock_count = 0;
-    output_element.innerText = "";
-try {
+
+let old_source: string | undefined;
+
+function compile_cached():  [Program, Debug_Info] | [undefined, undefined] {
     const source = source_input.value;
+    if (source == old_source) {
+        return [emulator.program, emulator.debug_info]
+    }
     const parsed = parse(source, {
         constants: Object.fromEntries([
             ...enum_strings(Gamepad_Key).map(key => [`@${key}`, `${1 << (Gamepad_Key[key as any] as any)}`]),
@@ -499,10 +502,22 @@ try {
     if (parsed.errors.length > 0){
         output_element.innerText = parsed.errors.map(v => expand_warning(v, parsed.lines)+"\n").join("");
         output_element.innerText += parsed.warnings.map(v => expand_warning(v, parsed.lines)+"\n").join("");
-        return false;
+        old_source = undefined;
+        return [undefined, undefined];
     }
     output_element.innerText += parsed.warnings.map(v => expand_warning(v, parsed.lines)+"\n").join("");
-    const [program, debug_info] = compile(parsed);
+    old_source = source;
+    return compile(parsed);
+}
+
+function compile_and_reset(): boolean {
+    clock_count = 0;
+    output_element.innerText = "";
+try {
+    const [program, debug_info] = compile_cached();
+    if (program == undefined) {
+        return false;
+    }
     emulator.load_program(program, debug_info);
     if (cout_check.checked) {
         try {
