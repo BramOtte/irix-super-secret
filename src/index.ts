@@ -3,7 +3,7 @@ import "./scroll-out/scroll-out.js";
 import "./buffer_view/buffer_view.js";
 
 import { Editor_Window } from "./editor/editor.js";
-import { compile } from "./emulator/compiler.js";
+import { compile, Debug_Info, Program } from "./emulator/compiler.js";
 import { Clock } from "./emulator/devices/clock.js";
 import { Console_IO } from "./emulator/devices/console-io.js";
 import { Color_Mode, Display } from "./emulator/devices/display.js";
@@ -16,8 +16,8 @@ import { RNG } from "./emulator/devices/rng.js";
 import { Sound } from "./emulator/devices/sound.js";
 import { Storage } from "./emulator/devices/storage.js";
 import { Emulator, Step_Result } from "./emulator/emulator.js";
-import { parse } from "./emulator/parser.js";
-import { enum_from_str, enum_strings, expand_warning, registers_to_string, format_int, fillin_template, registers_to_string_ } from "./emulator/util.js";
+import { Label_Type, parse } from "./emulator/parser.js";
+import { enum_from_str, enum_strings, expand_warning, registers_to_string, format_int, fillin_template } from "./emulator/util.js";
 import { Scroll_Out } from "./scroll-out/scroll-out.js";
 import { BufferView } from "./buffer_view/buffer_view.js";
 import { Iris_Display } from "./emulator/devices/iris/iris-display.js";
@@ -523,11 +523,14 @@ function compile_and_run(){
         frame();
     }
 }
-function compile_and_reset(): boolean {
-    clock_count = 0;
-    output_element.innerText = "";
-try {
+
+let old_source: string | undefined;
+
+function compile_cached():  [Program, Debug_Info] | [undefined, undefined] {
     const source = source_input.value;
+    if (source == old_source) {
+        return [emulator.program, emulator.debug_info]
+    }
     const parsed = parse(source, {
         constants: Object.fromEntries([
             ...enum_strings(Gamepad_Key).map(key => [`@${key}`, `${1 << (Gamepad_Key[key as any] as any)}`]),
@@ -535,15 +538,40 @@ try {
         ]),
     });
 
-    source_input.set_errors([...parsed.errors, ...parsed.warnings]);
+    source_input._errors.length = 0;
+
+    for (const label of Object.values(parsed.labels)) {
+        let msg: string;
+        switch (label.type) {
+            case Label_Type.DW: msg = `data at 0x${label.index.toString(16)}`; break;
+            case Label_Type.Inst: msg = `pc=${label.index}`; break;
+        }
+        source_input.add_error(label.line_nr, msg);
+    }
+
+    for (const error of [...parsed.errors, ...parsed.warnings]) {
+        source_input.add_error(error.line_nr, error.message)
+    }
 
     if (parsed.errors.length > 0){
         output_element.innerText = parsed.errors.map(v => expand_warning(v, parsed.lines)+"\n").join("");
         output_element.innerText += parsed.warnings.map(v => expand_warning(v, parsed.lines)+"\n").join("");
-        return false;
+        old_source = undefined;
+        return [undefined, undefined];
     }
     output_element.innerText += parsed.warnings.map(v => expand_warning(v, parsed.lines)+"\n").join("");
-    const [program, debug_info] = compile(parsed);
+    old_source = source;
+    return compile(parsed);
+}
+
+function compile_and_reset(): boolean {
+    clock_count = 0;
+    output_element.innerText = "";
+try {
+    const [program, debug_info] = compile_cached();
+    if (program == undefined) {
+        return false;
+    }
     emulator.load_program(program, debug_info);
     if (cout_check.checked) {
         try {
@@ -672,7 +700,7 @@ function process_step_result(result: Step_Result, steps: number){
 }
 function update_views(){
     if (memory_update_input.checked){
-        memory_view.memory = emulator.memory;
+        memory_view.emulator = emulator;
         memory_view.update();
     }
     register_view.innerText = 

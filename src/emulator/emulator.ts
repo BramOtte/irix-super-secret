@@ -63,7 +63,7 @@ export class Emulator implements Instruction_Ctx, Device_Host, URCL_Memory {
     call_stack: UintArray = new Uint16Array();
     data_stack: UintArray = new Uint16Array();
 
-    private heap_size = 0;
+    heap_size = 0;
     private do_debug_memory = false;
     private do_debug_registers = false;
     private do_debug_ports = false;

@@ -55,22 +55,32 @@ export function registers_to_string_(registers: WordArray, bits: number, do_head
         Array.from(registers, (v)=> hex(v, nibbles) + " ").join("");
 }
 
-export function memoryToString(view: Arr, from = 0x0, length = 0x1000, bits = 8) {
+export function memoryToString(view: Arr, from = 0x0, length = 0x1000, bits = 8, colors: [number, string][] = []) {
     const width = 0x10;
     const end = Math.min(from + length, view.length);
     const hexes = hex_size(bits);
-    let lines: string[] = [
-        // " ".repeat(hexes) + Array.from({ length: width }, (_, i) => {
-        //     return pad_left(hex(i, 1), hexes);
-        // }).join(" ")
-    ];
+    let lines: string[] = [];
+
+    let color: undefined|string;
+    let color_i = 0;
 
     for (let i = from; i < end;) {
         const sub_end = Math.min(i + width, end);
         let subs = [];
         const addr = hex(0 | i / width, hexes - 1, " ");
         for (; i < sub_end; i++) {
-            subs.push(hex(view[i], hexes));
+            while (color_i < colors.length && colors[color_i][0] <= i) {
+                color = colors[color_i][1];
+                color_i += 1;
+                console.log(color)
+            }
+            if (color == undefined) {
+                subs.push(hex(view[i], hexes));
+            } else {
+                // FIXME: innerHTML jank
+                subs.push(`<span style="background: ${color}">${hex(view[i], hexes)}</span>`);
+            }
+
         }
         const line = subs.join(" ");
         lines.push(addr + ":" + " ".repeat(hexes - addr.length) + line);
