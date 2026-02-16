@@ -52,7 +52,7 @@ export class Emulator implements Instruction_Ctx, Device_Host, URCL_Memory {
     constructor(public options: Emu_Options){
 
     }
-    private heap_size = 0;
+    heap_size = 0;
     private do_debug_memory = false;
     private do_debug_registers = false;
     private do_debug_ports = false;

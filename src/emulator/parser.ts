@@ -32,12 +32,12 @@ function my_parse_f32(x: string){
     return f32_encode(float);
 }
 
-enum Label_Type {
+export enum Label_Type {
     Inst, DW
 }
 
 interface Label {
-    type: Label_Type, index: i53, prev?: Label
+    type: Label_Type, index: i53, prev?: Label, line_nr: number,
 }
 
 interface Header_Value {
@@ -400,7 +400,7 @@ function parse_label(line: string, line_nr: number, inst_i: number, out: Label_O
     if (out.labels[name] !== undefined){
         warnings.push(warn(line_nr, `Duplicate label ${name}`));
     }
-    const label: Label = {type: Label_Type.Inst, index: inst_i};
+    const label: Label = {type: Label_Type.Inst, index: inst_i, line_nr};
     out.labels[name] = label;
     return label;
 }

@@ -1,3 +1,5 @@
+import { Emulator } from "../emulator/emulator.js";
+import { Register } from "../emulator/instructions.js";
 import { bound, memoryToString } from "../emulator/util.js";
 import { l } from "../l.js";
 
@@ -5,8 +7,9 @@ export class BufferView extends HTMLElement {
     content: HTMLElement;
     scroll_div: HTMLElement;
     char: HTMLElement;
-    memory: Uint8Array | Uint16Array | Uint32Array = new Uint8Array();
     width: number = 16;
+
+    emulator?: Emulator;
 
     constructor() {
         super();
@@ -24,8 +27,14 @@ export class BufferView extends HTMLElement {
     
     
     public update(){
+        if (this.emulator == undefined) {
+            return
+        }
+
+        const memory = this.emulator.memory;
+
         const ch = this.char.clientHeight;
-        const H = Math.ceil(this.memory.length / this.width);
+        const H = Math.ceil(memory.length / this.width);
         const height = H * ch;
         this.scroll_div.style.height = `${height}px`;
         
@@ -36,8 +45,17 @@ export class BufferView extends HTMLElement {
 
         const sy = bound(y, 0, H), ey = bound(y+h, 0, H);
         this.content.style.top = `${sy*ch}px`;
-        
-        this.content.innerText = memoryToString(this.memory, sy * this.width, (ey - sy) * this.width, this.memory.BYTES_PER_ELEMENT*8);
+    
+        this.content.innerHTML = memoryToString(
+            memory,
+            sy * this.width, (ey - sy) * this.width,
+            this.emulator._bits,
+            [
+                [this.emulator.program.data.length, "#132"],
+                [this.emulator.heap_size, "#300"],
+                [this.emulator.registers[Register.SP], "darkred"],
+            ]
+        );
     }
 
 }
