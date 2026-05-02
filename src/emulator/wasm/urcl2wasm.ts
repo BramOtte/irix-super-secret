@@ -1,6 +1,6 @@
 import { IntArray, Step_Result, UintArray } from "../IEmu";
 import { Debug_Info, Program } from "../compiler";
-import { IO_Port, Opcode, Operant_Prim, Register, URCL_Header, call_stack_cap, data_stack_cap, register_count } from "../instructions";
+import { IO_Port, Opcode, Operant_Prim, Register, URCL_Header, register_count } from "../instructions";
 import { Export_Type, Section_Type, WASM_Opcode, WASM_Type, magic, version } from "./wasm";
 import { WASM_Writer } from "./wasm_writer";
 
@@ -81,10 +81,10 @@ export function create_urcl_memory(program: Program): URCL_Memory {
     
     // IRIS stuff
     const call_stack_offset = counter_offset + counter_length * Uint32Array.BYTES_PER_ELEMENT;
-    const call_stack_length = call_stack_cap;
+    const call_stack_length = program.headers[URCL_Header.MINCALLSTACK].value;
 
     const data_stack_offset = call_stack_offset + call_stack_length * WordArray.BYTES_PER_ELEMENT;
-    const data_stack_length = data_stack_cap;
+    const data_stack_length = program.headers[URCL_Header.MINDATASTACK].value;
     // END IRIS stuff
 
     const size = data_stack_offset + data_stack_length * WordArray.BYTES_PER_ELEMENT;

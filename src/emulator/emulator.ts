@@ -1,5 +1,5 @@
 import { Word, registers_to_string, indent, hex, pad_center, pad_left, f16_encode, f16_decode } from "./util.js";
-import {Opcode, Operant_Operation, Operant_Prim, Opcodes_operants, Instruction_Ctx, URCL_Header, IO_Port, Register, Header_Run, register_count, inst_fns, Opcodes_operant_lengths, call_stack_cap, data_stack_cap} from "./instructions.js";
+import {Opcode, Operant_Operation, Operant_Prim, Opcodes_operants, Instruction_Ctx, URCL_Header, IO_Port, Register, Header_Run, register_count, urcl_headers } from "./instructions.js";
 import { Debug_Info, Program } from "./compiler.js";
 import { Device, Device_Host, Device_Input, Device_Output, Device_Reset } from "./devices/device.js";
 import { Break } from "./breaks.js"; 
@@ -91,6 +91,9 @@ export class Emulator implements Instruction_Ctx, Device_Host, URCL_Memory {
         this.heap_size = heap;
         this.debug_reached = false;
         this.pc = 0;
+        this.call_stack_cap = program.headers[URCL_Header.MINCALLSTACK].value;
+        this.data_stack_cap = program.headers[URCL_Header.MINDATASTACK].value;
+
 
         this.check_debug_info();
 
@@ -654,8 +657,8 @@ step(): Step_Result {
 
 
     //---- Iris stuff
-    call_stack_cap = call_stack_cap;
-    data_stack_cap = data_stack_cap;
+    call_stack_cap: number = urcl_headers[URCL_Header.MINCALLSTACK].def;
+    data_stack_cap: number = urcl_headers[URCL_Header.MINDATASTACK].def;
 
     get csp() {return this.registers[Register._CSP];}
     set csp(value) {this.registers[Register._CSP] = value;}

@@ -1,11 +1,6 @@
 import { UintArray } from "./IEmu.js";
 import {enum_count, object_map} from "./util.js";
 
-
-
-export const call_stack_cap = 10_000;
-export const data_stack_cap = 10_000;
-
 export enum Opcode {
     // Core Instructions
     ADD, RSH, LOD, STR, BGE, NOR, IMM,
@@ -73,7 +68,11 @@ export enum Operant_Operation {
 }
 
 export enum URCL_Header {
-    BITS, MINREG, MINHEAP, RUN, MINSTACK
+    BITS, MINREG, MINHEAP, RUN, MINSTACK,
+    
+    // iris stuff
+    MINCALLSTACK,
+    MINDATASTACK,
 }
 
 export enum Constants {
@@ -102,6 +101,8 @@ export const urcl_headers: Record<URCL_Header, URCL_Header_Def> = {
     [URCL_Header.MINHEAP]: {def: 1024 * 4},
     [URCL_Header.RUN]: {def: Header_Run.ROM, in: Header_Run},
     [URCL_Header.MINSTACK]: {def: 8},
+    [URCL_Header.MINCALLSTACK]: {def: 32},
+    [URCL_Header.MINDATASTACK]: {def: 32},
 }
 
 export enum IO_Port {
