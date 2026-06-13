@@ -17,7 +17,7 @@ import { Sound } from "./emulator/devices/sound.js";
 import { Storage } from "./emulator/devices/storage.js";
 import { Emulator, Step_Result } from "./emulator/emulator.js";
 import { Label_Type, parse } from "./emulator/parser.js";
-import { enum_from_str, enum_strings, expand_warning, registers_to_string, format_int, fillin_template } from "./emulator/util.js";
+import { enum_from_str, enum_strings, expand_warning, registers_to_string,registers_to_string_, format_int, fillin_template } from "./emulator/util.js";
 import { Scroll_Out } from "./scroll-out/scroll-out.js";
 import { BufferView } from "./buffer_view/buffer_view.js";
 import { Iris_Display } from "./emulator/devices/iris/iris-display.js";
