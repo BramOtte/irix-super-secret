@@ -1,0 +1,21 @@
+name: Publish
+on:
+  push:
+    branches:
+      - master
+jobs:
+  publish:
+    runs-on: codeberg-tiny
+    steps:
+      - run: curl -fsSL https://esbuild.github.io/dl/v0.28.0 | sh
+      - run: mv esbuild /bin/
+      
+      - uses: actions/checkout@v5
+
+      - run: /bin/esbuild src/index.ts --bundle --outdir=js --format=esm --sourcemap --loader:.vert=text --loader:.frag=text
+
+      - uses: actions/git-pages@v2
+        with:
+          site: 'https://${{ forge.repository_owner }}.codeberg.page/urcl-explorer/'
+          token: ${{ forge.token }}
+          source: .
